@@ -363,6 +363,11 @@ int main(void)
     global_mission_data.ACCEL_P = imu_data.accel_p;
     global_mission_data.ACCEL_Y = imu_data.accel_y;
 
+    // update magnetometer
+    global_mission_data.MAG_R = rand() % 1000 / 1000.0; // mag_r
+    global_mission_data.MAG_P = rand() % 1000 / 1000.0; // mag_p
+    global_mission_data.MAG_Y = rand() % 1000 / 1000.0; // mag_y
+
     // update GPS
     /*strlen = sprintf(global_mission_data.GPS_TIME, "%d:%d:%d",
                      gps_data.time_H,
