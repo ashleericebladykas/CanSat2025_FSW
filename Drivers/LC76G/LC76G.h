@@ -5,10 +5,11 @@
 #include "uart_interrupt.h"
 
 #define TIMEOUT 5
+#define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
 
 // DMA buffer aligned to 4-bytes
 #define GPS_DMA_BUFFER_SIZE 128
-uint8_t gps_dma_buffer[GPS_DMA_BUFFER_SIZE] __attribute__((aligned(4)));
+extern uint8_t gps_dma_buffer[GPS_DMA_BUFFER_SIZE] __attribute__((aligned(4)));
 
 /* Define GPS commands */
 // Checksums calculated using: https://nmeachecksum.eqth.net/
@@ -37,10 +38,12 @@ typedef struct {
 
     uint8_t num_sat_used;
 }LC76G_gps_data;
-LC76G_gps_data gps_data;
+extern LC76G_gps_data gps_data;
 
 /* Define functions */
 void LC76G_init();
+void LC76_receive_data();
+void usart_process_data(const void* data, size_t len);
 void LC76G_parse_data();
 LC76G_gps_data LC76G_read_data();
 // void LC76G_Send_Command(char *data);
