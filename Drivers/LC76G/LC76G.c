@@ -2,6 +2,9 @@
 #include <string.h>
 #include <math.h>
 
+// Initialize global fields
+uint8_t gps_dma_buffer[GPS_DMA_BUFFER_SIZE] = {0};
+LC76G_gps_data gps_data;
 
 void LC76G_init()
 {
@@ -118,7 +121,7 @@ void LC76G_parse_data() {
     strncpy(GGA_sentence, gga_start, len);
 
     // Iterate through the comma-delimited string
-    char *token = strok(GGA_sentence, ",");
+    char *token = strtok(GGA_sentence, ",");
     uint8_t tokenNum = 1;
     while (token != NULL && strchr(token, '$') == NULL) {
         switch(tokenNum) {
@@ -181,7 +184,7 @@ void LC76G_parse_data() {
                 break;
         }   // End switch statement
 
-        token = strok(NULL, ",");
+        token = strtok(NULL, ",");
         tokenNum++;
     }   // End string iteration
 }

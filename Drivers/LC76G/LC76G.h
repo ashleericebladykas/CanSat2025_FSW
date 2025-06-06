@@ -9,7 +9,7 @@
 
 // DMA buffer aligned to 4-bytes
 #define GPS_DMA_BUFFER_SIZE 128
-uint8_t gps_dma_buffer[GPS_DMA_BUFFER_SIZE] __attribute__((aligned(4)));
+extern uint8_t gps_dma_buffer[GPS_DMA_BUFFER_SIZE] __attribute__((aligned(4)));
 
 /* Define GPS commands */
 // Checksums calculated using: https://nmeachecksum.eqth.net/
@@ -38,7 +38,7 @@ typedef struct {
 
     uint8_t num_sat_used;
 }LC76G_gps_data;
-LC76G_gps_data gps_data;
+extern LC76G_gps_data gps_data;
 
 /* Define functions */
 void LC76G_init();
