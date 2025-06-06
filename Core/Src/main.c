@@ -356,8 +356,12 @@ int main(void)
       global_mission_data.PRESSURE = bmp_data.pressure_kPa;
     }
     // if the calibrating flag is true, calibrate the altitude
-    global_mission_data.ALTITUDE = calculateAltitude(global_mission_data.PRESSURE, is_calibrated);
-    is_calibrated = 0; // reset the flag
+    global_mission_data.ALTITUDE = calculateAltitude(global_mission_data.PRESSURE);
+    if (is_calibrated == 1)
+    {
+      altitude_offset = global_mission_data.ALTITUDE; // set the offset to the current altitude
+      is_calibrated = 0; // reset the flag
+    }
 
     // update battery voltage
     uint16_t battery_mV = 0;

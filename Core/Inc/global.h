@@ -24,6 +24,7 @@ extern volatile uint8_t mec_wire_enable;
 extern volatile uint8_t simulation_pre;
 extern volatile double altitude_offset;
 extern volatile double simulated_pressure;
+extern volatile float altitude_offset;
 
 //structs
 
