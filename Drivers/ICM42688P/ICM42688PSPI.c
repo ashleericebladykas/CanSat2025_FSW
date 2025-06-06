@@ -35,16 +35,14 @@ static HAL_StatusTypeDef ICM42688P_write_reg(uint8_t reg, uint8_t data)
 
 int16_t ICM42688P_read_reg(uint8_t reg)
 {
-    uint8_t tx = reg | (1 << 7);
-    int8_t rx[2] = {0};
+    uint8_t tx[3] = { reg | 0x80, 0x00, 0x00 }; // 0x80 = read bit
+    int8_t rx[3] = {0};
     ICM42688P_disable_chip_select();
-    HAL_SPI_Transmit(hspi, &tx, 1, HAL_MAX_DELAY);
-
-    HAL_SPI_Receive(hspi, &rx, 1, HAL_MAX_DELAY);
+    HAL_SPI_TransmitReceive(hspi, &tx, &rx, 3, HAL_MAX_DELAY);
     ICM42688P_enable_chip_select();
 
-    int16_t shifted = rx[0] << 8;
-    int16_t lower = rx[1];
+    int16_t shifted = rx[1] << 8;
+    int16_t lower = rx[2];
     int16_t value = shifted | lower;
     return value;
 }
