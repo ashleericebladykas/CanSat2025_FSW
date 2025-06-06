@@ -377,6 +377,7 @@ int main(void)
     global_mission_data.ACCEL_Y = imu_data.accel_y;
 
     // Magnitutude
+    mag_data = BMM150_read_mag_data(&bmm150);
     global_mission_data.MAG_P = mag_data.x;
     global_mission_data.MAG_R = mag_data.z;
     global_mission_data.MAG_Y = mag_data.y;
