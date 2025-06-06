@@ -5,6 +5,7 @@
 #include "uart_interrupt.h"
 
 #define TIMEOUT 5
+#define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
 
 // DMA buffer aligned to 4-bytes
 #define GPS_DMA_BUFFER_SIZE 128
@@ -41,6 +42,8 @@ LC76G_gps_data gps_data;
 
 /* Define functions */
 void LC76G_init();
+void LC76_receive_data();
+void usart_process_data(const void* data, size_t len);
 void LC76G_parse_data();
 LC76G_gps_data LC76G_read_data();
 // void LC76G_Send_Command(char *data);
