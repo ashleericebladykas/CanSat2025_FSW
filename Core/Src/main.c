@@ -200,7 +200,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int i = 0;
-  int strlen = 0;
+  int str_len = 0;
 
   MS5607Readings bmp_data;
   ICM42688P_AccelData imu_data;
@@ -237,7 +237,7 @@ int main(void)
 
     // step3: use string::compare and chop off the first 12 characters of the string (https://cplusplus.com/reference/string/string/compare/)
     // char cmd_prefix[12] = "CMD,3174,CX,";
-    // cmd_length = strlen(cmd_prefix);
+    // cmd_length = str_len(cmd_prefix);
     // const char *sub_cmd = &rx_string[cmd_length];
     // if (strncmp(rx_string, cmd_prefix, cmd_length) != 0) {
     //
@@ -262,8 +262,20 @@ int main(void)
       char c_echo[] = "CXOFF";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
-    else if (strncmp(rx_string, "CMD,3174,ST,GPS", 15) == 0)
+    else if (strncmp(rx_string, "CMD,3174,ST,", 12) == 0)
     {
+      char arg[9];
+      char *time_str = rx_string + 12;
+      strncpy(arg, time_str, 9);
+
+      if (strlen(arg) == 8) {
+        char *str_end;
+        strncpy(global_mission_data.MISSION_TIME, time_str, 9);
+      }
+      else {
+        // if the string is not 8 characters long, set it to "00:00:00"
+        strcpy(global_mission_data.MISSION_TIME, "00:00:00");
+      }
     }
     else if (strncmp(rx_string, "CMD,3174,SIM,ENABLE", 19) == 0)
     {
@@ -369,7 +381,7 @@ int main(void)
     global_mission_data.MAG_Y = rand() % 1000 / 1000.0; // mag_y
 
     // update GPS
-    /*strlen = sprintf(global_mission_data.GPS_TIME, "%d:%d:%d",
+    /*str_len = sprintf(global_mission_data.GPS_TIME, "%d:%d:%d",
                      gps_data.time_H,
                      gps_data.time_M,
                      gps_data.time_S);
@@ -387,7 +399,7 @@ int main(void)
     if (telemetry_enable)
     {
       char telemetry_string[200];
-      strlen = sprintf(telemetry_string, "%d,%s,%ld,%c,%s,%3.1f,%.1f,%.1f,%.1f,%d,%d,%d",
+      str_len = sprintf(telemetry_string, "%d,%s,%ld,%c,%s,%3.1f,%.1f,%.1f,%.1f,%d,%d,%d",
                        global_mission_data.TEAM_ID,      // team id
                        global_mission_data.MISSION_TIME, // temp; mission time
                        global_mission_data.PACKET_COUNT, // temp; packet count
@@ -402,10 +414,10 @@ int main(void)
                        global_mission_data.GYRO_Y
                        // gyro_y
       );
-      // strlen = sizeof(telemetry_string);
-      HAL_UART_Transmit(&huart3, telemetry_string, strlen, HAL_MAX_DELAY);
+      // str_len = sizeof(telemetry_string);
+      HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
       memset(telemetry_string, 0, sizeof(telemetry_string)); // flush array
-      strlen = sprintf(telemetry_string, ",%d,%d,%d,%.1f,%.1f,%.1f,%d,%s,%.1f,%.4f,%.4f,%d,%s",
+      str_len = sprintf(telemetry_string, ",%d,%d,%d,%.1f,%.1f,%.1f,%d,%s,%.1f,%.4f,%.4f,%d,%s",
                        global_mission_data.ACCEL_R, // accel_r
                        global_mission_data.ACCEL_P, // accel_p
                        global_mission_data.ACCEL_Y,
@@ -419,11 +431,11 @@ int main(void)
                        global_mission_data.GPS_LONGITUDE,           // temp; gps longitude
                        global_mission_data.GPS_SATS,                // temp; # of gps satellites
                        global_mission_data.CMD_ECHO);
-      HAL_UART_Transmit(&huart3, telemetry_string, strlen, HAL_MAX_DELAY);
+      HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
 
       /*char test_string[30];
-      strlen = sprintf(test_string, "accel_z: %d", imu_data.accel_z);
-      HAL_UART_Transmit(&huart3, test_string, strlen, HAL_MAX_DELAY);*/
+      str_len = sprintf(test_string, "accel_z: %d", imu_data.accel_z);
+      HAL_UART_Transmit(&huart3, test_string, str_len, HAL_MAX_DELAY);*/
 
       global_mission_data.PACKET_COUNT = global_mission_data.PACKET_COUNT + 1;
     }
