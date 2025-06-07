@@ -496,6 +496,8 @@ int main(void)
       {
         Error_Handler();
       }
+
+      update_time = 0;
     }
 
     if (!gps_time_enable) {
