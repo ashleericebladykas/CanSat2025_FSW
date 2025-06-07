@@ -209,11 +209,23 @@ int main(void)
 
   // Set RTC to 00:00:00
   RTC_TimeTypeDef sTime = {0};
+  RTC_DateTypeDef sDate = {0};
+
   sTime.Hours = 0;
   sTime.Minutes = 0;
   sTime.Seconds = 0;
 
   if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sDate.WeekDay = RTC_WEEKDAY_FRIDAY;
+  sDate.Month = RTC_MONTH_JANUARY;
+  sDate.Date = 2;
+  sDate.Year = 70;
+
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
@@ -502,6 +514,7 @@ int main(void)
 
     if (!gps_time_enable) {
       // Update mission time
+      RTC_DateTypeDef getDate = {0};
       RTC_TimeTypeDef getTime = {0};
 
       if (HAL_RTC_GetTime(&hrtc, &getTime, RTC_FORMAT_BIN) != HAL_OK)
@@ -509,7 +522,13 @@ int main(void)
         Error_Handler();
       }
 
-      snprintf(global_mission_data.MISSION_TIME, 8, "%02d:%02d:%02d",
+      // Required call to GetDate to unlock time registers
+      if (HAL_RTC_GetDate(&hrtc, &getDate, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      snprintf(global_mission_data.MISSION_TIME, 9, "%02d:%02d:%02d",
               getTime.Hours, getTime.Minutes, getTime.Seconds);
     }
     
