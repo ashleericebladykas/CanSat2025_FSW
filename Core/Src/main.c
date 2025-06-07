@@ -29,7 +29,7 @@
 #include "../../Drivers/ICM42688P/ICM42688PSPI.h"
 #include "../../Drivers/MS5607/MS5607SPI.h"
 #include "../../Drivers/BMM150/BMM150SPI.h"
-#include "../../Drivers/LC76G/LC76G.h"
+#include "../../Drivers/LC76G/gps.h"
 #include "../../Drivers/AMT10E2/AMT10E2.h"
 #include "../../Drivers/BQ28Z610/BQ28Z610I2C.h"
 #include "../../Drivers/DRV8838/DRV8838.h"
@@ -108,11 +108,15 @@ static void MX_CORDIC_Init(void);
 static void MX_FMAC_Init(void);
 /* USER CODE BEGIN PFP */
 
+extern GPS_t GPS;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart == &huart5) GPS_UART_CallBack();
+}
 /* USER CODE END 0 */
 
 /**
@@ -188,7 +192,8 @@ int main(void)
   struct bmm150_dev bmm150 = BMM150_spi_init(&hspi2, MAG_nCS_GPIO_Port, MAG_nCS_Pin);
 
   // Initialize LC76G
-  LC76G_init();
+  // LC76G_init();
+  GPS_Init();
 
   // Initializing AMT10E2
   QENC_Init_Encoder0();
@@ -205,7 +210,8 @@ int main(void)
   MS5607Readings bmp_data;
   ICM42688P_AccelData imu_data;
   BMM150_mag_data mag_data;
-  LC76G_gps_data gps_data;
+  // GPS_t GPS;
+  // LC76G_gps_data gps_data;
 
   uint8_t super_hot_resistor_cycle_limit = 30;
   uint8_t super_hot_resistor_cycles = 0;
@@ -342,7 +348,7 @@ int main(void)
 
     bmp_data = MS5607ReadValues();
     imu_data = ICM42688P_read_data();
-    gps_data = LC76G_read_data();
+    // gps_data = LC76G_read_data();
 
     // update mission struct
     global_mission_data.TEMPERATURE = bmp_data.temperature_C;
@@ -391,11 +397,19 @@ int main(void)
     global_mission_data.GPS_LATITUDE = gps_data.lat;
     global_mission_data.GPS_LONGITUDE = gps_data.lon;
     global_mission_data.GPS_SATS = gps_data.num_sat_used;*/
-    strcpy(global_mission_data.GPS_TIME, gps_data.UTC_time);
-    global_mission_data.GPS_ALTITUDE = 0.0;
-    global_mission_data.GPS_LATITUDE = 0.0;
-    global_mission_data.GPS_LONGITUDE = 0.0;
-    global_mission_data.GPS_SATS = 0;
+
+    //global_mission_data.GPS_TIME = GPS.utc_time;
+    int hours = (int) GPS.utc_time;
+    double minutesDecimal = (GPS.utc_time - hours) * 60;
+    int minutes = (int) (minutesDecimal);
+    int seconds = (int) ((minutesDecimal - minutes) * 60);
+    snprintf(global_mission_data.GPS_TIME, sizeof(global_mission_data.GPS_TIME), "%02d:%02d:%02d", hours, minutes, seconds);
+
+    global_mission_data.GPS_ALTITUDE = GPS.altitude_ft;
+    global_mission_data.GPS_LATITUDE = GPS.nmea_latitude;
+    global_mission_data.GPS_LONGITUDE = GPS.nmea_longitude;
+    global_mission_data.GPS_SATS = GPS.satelites;
+
 
     // send the packet if telemetry is enabled
     if (telemetry_enable)

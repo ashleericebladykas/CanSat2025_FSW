@@ -32,7 +32,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <usart.h>
+// #include <usart.h>
 #include "gps.h"
 
 #if (GPS_DEBUG == 1)
