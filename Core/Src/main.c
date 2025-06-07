@@ -306,6 +306,7 @@ int main(void)
       if (simulation_pre == 1)
       {
         simulation_enable = 1;
+        simulated_pressure = global_mission_data.PRESSURE;
         char c_echo[] = "SIMACT";
         strcpy(global_mission_data.CMD_ECHO, c_echo);
       }
@@ -322,10 +323,10 @@ int main(void)
     {
       char *pressure_str = rx_string + 14;
       char *str_end;
-      int pressure_pa = strtol(rx_string + 14, &str_end, 10);
+      long pressure_pa = atof(rx_string + 14);
       // if (str_end == pressure_str || *str_end != '\0')
       // it wasn't a valid number
-      simulated_pressure = pressure_pa / 1000;
+      simulated_pressure = pressure_pa;
       char c_echo[] = "SIMP";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
@@ -369,11 +370,13 @@ int main(void)
     if (simulation_enable == 1)
     {
       global_mission_data.PRESSURE = simulated_pressure;
+      global_mission_data.MODE = 'S';
     }
     // otherwise, update pressure to match data read from sensor
     else
     {
       global_mission_data.PRESSURE = bmp_data.pressure_kPa;
+      global_mission_data.MODE = 'F';
     }
     // if the calibrating flag is true, calibrate the altitude
     global_mission_data.ALTITUDE = calculateAltitude(global_mission_data.PRESSURE);
@@ -493,43 +496,34 @@ int main(void)
     }
 
     // Set Real Time Clock if needed
-    if (update_time) {
-      // Set RTC to 00:00:00
-      RTC_TimeTypeDef sTime = {0};
-      RTC_DateTypeDef sDate = {0};
+    if (update_time)
+        {
+          // Set RTC to 00:00:00
+          RTC_TimeTypeDef sTime = {0};
+          RTC_DateTypeDef sDate = {0};
 
-      sTime.Hours = 0;
-      sTime.Minutes = 0;
-      sTime.Seconds = 0;
+          char *string_remainder;
+          sTime.Hours = strtol(global_mission_data.MISSION_TIME, &string_remainder, 10);
+          sTime.Minutes = strtol(++string_remainder, &string_remainder, 10);
+          sTime.Seconds = strtol(++string_remainder, &string_remainder, 10);
 
-      if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-      {
-        Error_Handler();
-      }
+          if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+          {
+            Error_Handler();
+          }
 
-      sDate.WeekDay = RTC_WEEKDAY_FRIDAY;
-      sDate.Month = RTC_MONTH_JANUARY;
-      sDate.Date = 2;
-      sDate.Year = 70;
+          sDate.WeekDay = RTC_WEEKDAY_FRIDAY;
+          sDate.Month = RTC_MONTH_JANUARY;
+          sDate.Date = 2;
+          sDate.Year = 70;
 
-      if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
-      {
-        Error_Handler();
-      }
+          if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
+          {
+            Error_Handler();
+          }
 
-      /*
-      char *string_remainder;
-      sTime.Hours = strtol(global_mission_data.MISSION_TIME, &string_remainder, 10);
-      sTime.Minutes = strtol(++string_remainder, &string_remainder, 10);
-      sTime.Seconds = strtol(++string_remainder, &string_remainder, 10);
-
-      if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-      {
-        Error_Handler();
-      }
-      */
-      update_time = 0;
-    }
+          update_time = 0;
+        }
 
     if (!gps_time_enable) {
       // Update mission time

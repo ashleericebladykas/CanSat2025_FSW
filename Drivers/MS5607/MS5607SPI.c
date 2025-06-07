@@ -378,46 +378,44 @@ float calculateAltitude(double pressure) {
 // Idea is to calculateAltitude then immediately call this function
 // to detemrine state.
 void determineState(double altitude){
-    // Set to ASCENT.
-    if(altitude > lower_altitude_threshold 
-        && strcmp(global_mission_data.STATE, "LAUNCH_PAD") == 0)
-    {
-        char _state[] = "ASCENT";
-        memcpy(global_mission_data.STATE, _state, sizeof(_state));
+    // LAUNCH_PAD state
+    if (strcmp(global_mission_data.STATE, "LAUNCH_PAD") == 0) {
+        if (altitude > lower_altitude_threshold) {
+            char _state[] = "ASCENT";
+            memcpy(global_mission_data.STATE, _state, sizeof(_state));
+        }
     }
-    // Set to APOGEE.
-    else if (max(altitude_history[0], altitude_history[1]) < max_altitude - 15
-        && strcmp(global_mission_data.STATE, "ASCENT") == 0)
-    {   
-        // Calculate where probe should be released at.
-        max_altitude = altitude;
-        apogee_difference_ratio = apogee_offset_height / max_altitude;
+    else if (strcmp(global_mission_data.STATE, "ASCENT") == 0) {
+        if (altitude > max_altitude) max_altitude = altitude;
+        apogee_difference_ratio = 0;
 
-        // Set flag to start heating up the resistor.
-        mec_wire_enable = 1;
+        if (fmax(altitude_history[0], altitude_history[1]) < max_altitude - 15) {
+            mec_wire_enable = 1;
 
-        char _state[] = "APOGEE";
-        memcpy(global_mission_data.STATE, _state, sizeof(_state));
+            char _state[] = "APOGEE";
+            memcpy(global_mission_data.STATE, _state, sizeof(_state));
+        }
     }
-    // Set to DESCENT
-    else if(strcmp(global_mission_data.STATE, "APOGEE") == 0
-        && altitude > max_altitude*(apogee_base_ratio + apogee_difference_ratio))
-    {
-        char _state[] = "DESCENT";
-        memcpy(global_mission_data.STATE, _state, sizeof(_state));
+    else if (strcmp(global_mission_data.STATE, "APOGEE") == 0) {
+        if (altitude > max_altitude * (apogee_base_ratio + apogee_difference_ratio)) {
+            char _state[] = "DESCENT";
+            memcpy(global_mission_data.STATE, _state, sizeof(_state));
+        }
+        else if (altitude < max_altitude * (apogee_base_ratio + apogee_difference_ratio)) {
+            char _state[] = "PROBE_RELEASE";
+            memcpy(global_mission_data.STATE, _state, sizeof(_state));
+        }
     }
-    // Set to PROBE_RELEASE
-    else if((strcmp(global_mission_data.STATE, "DESCENT") == 0 || strcmp(global_mission_data.STATE, "APOGEE"))
-        && altitude < max_altitude*(apogee_base_ratio + apogee_difference_ratio))
-    {
-        char _state[] = "PROBE_RELEASE";
-        memcpy(global_mission_data.STATE, _state, sizeof(_state));
+    else if (strcmp(global_mission_data.STATE, "DESCENT")) {
+        if (altitude < max_altitude * (apogee_base_ratio + apogee_difference_ratio)) {
+            char _state[] = "PROBE_RELEASE";
+            memcpy(global_mission_data.STATE, _state, sizeof(_state));
+        }
     }
-    // Set to LANDED
-    else if(strcmp(global_mission_data.STATE, "PROBE_RELEASE") == 0
-        && altitude < lower_altitude_threshold)
-    {
-        char _state[] = "LANDED";
-        memcpy(global_mission_data.STATE, _state, sizeof(_state));
+    else if (strcmp(global_mission_data.STATE, "PROBE_RELEASE")) {
+        if (altitude < lower_altitude_threshold) {
+            char _state[] = "LANDED";
+            memcpy(global_mission_data.STATE, _state, sizeof(_state));
+        }
     }
 }
