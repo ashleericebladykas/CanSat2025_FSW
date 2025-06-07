@@ -207,29 +207,6 @@ int main(void)
   BMM150_mag_data mag_data;
   LC76G_gps_data gps_data;
 
-  // Set RTC to 00:00:00
-  RTC_TimeTypeDef sTime = {0};
-  RTC_DateTypeDef sDate = {0};
-
-  sTime.Hours = 0;
-  sTime.Minutes = 0;
-  sTime.Seconds = 0;
-
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  sDate.WeekDay = RTC_WEEKDAY_FRIDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 2;
-  sDate.Year = 70;
-
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
   uint8_t update_time = 0;
 
   uint8_t super_hot_resistor_cycle_limit = 30;
@@ -499,6 +476,30 @@ int main(void)
 
     // Set Real Time Clock if needed
     if (update_time) {
+      // Set RTC to 00:00:00
+      RTC_TimeTypeDef sTime = {0};
+      RTC_DateTypeDef sDate = {0};
+
+      sTime.Hours = 0;
+      sTime.Minutes = 0;
+      sTime.Seconds = 0;
+
+      if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      sDate.WeekDay = RTC_WEEKDAY_FRIDAY;
+      sDate.Month = RTC_MONTH_JANUARY;
+      sDate.Date = 2;
+      sDate.Year = 70;
+
+      if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      /*
       char *string_remainder;
       sTime.Hours = strtol(global_mission_data.MISSION_TIME, &string_remainder, 10);
       sTime.Minutes = strtol(++string_remainder, &string_remainder, 10);
@@ -508,7 +509,7 @@ int main(void)
       {
         Error_Handler();
       }
-
+      */
       update_time = 0;
     }
 
