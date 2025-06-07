@@ -42,7 +42,7 @@ void LC76_receive_data() {
     size_t pos;
 
     /* Calculate current position in buffer and check for new data available */
-    pos = ARRAY_LEN(gps_dma_buffer) - LL_DMA_GetDataLength(DMA1, LL_DMA_STREAM_1);
+    pos = ARRAY_LEN(gps_dma_buffer); //- LL_DMA_GetDataLength(DMA1, LL_DMA_STREAM_1);
     if (pos != old_pos) {                       /* Check change in received data */
         if (pos > old_pos) {                    /* Current position is over previous one */
             /*
