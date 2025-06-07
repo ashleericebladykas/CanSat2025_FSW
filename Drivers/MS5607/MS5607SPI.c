@@ -386,7 +386,7 @@ void determineState(double altitude){
         memcpy(global_mission_data.STATE, _state, sizeof(_state));
     }
     // Set to APOGEE.
-    else if (altitude_history[2] > altitude_history[1] && altitude_history[2] > altitude_history[0] 
+    else if (max(altitude_history[0], altitude_history[1]) < max_altitude - 15
         && strcmp(global_mission_data.STATE, "ASCENT") == 0)
     {   
         // Calculate where probe should be released at.
