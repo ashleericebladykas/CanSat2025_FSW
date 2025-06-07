@@ -207,6 +207,8 @@ int main(void)
   BMM150_mag_data mag_data;
   LC76G_gps_data gps_data;
 
+  uint8_t update_time = 0;
+
   uint8_t super_hot_resistor_cycle_limit = 30;
   uint8_t super_hot_resistor_cycles = 0;
   char command[64] = {0};
@@ -280,12 +282,16 @@ int main(void)
       if (strlen(arg) == 8) {
         char *str_end;
         strncpy(global_mission_data.MISSION_TIME, time_str, 9);
-      }
-      else {
+        // Set a flag telling us to update the RTC
+        update_time = 1;
+        gps_time_enable = 0;
+      } else if (strncmp(time_str, "GPS", 3)) {
+        gps_time_enable = 1;
+      } else {
         // if the string is not 8 characters long, set it to "00:00:00"
         strcpy(global_mission_data.MISSION_TIME, "00:00:00");
+        gps_time_enable = 0;
       }
-
       char c_echo[] = "ST";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
@@ -353,7 +359,7 @@ int main(void)
 
     bmp_data = MS5607ReadValues();
     imu_data = ICM42688P_read_data();
-    mag_data = BMM150_read_mag_data(&bmm150);
+    // mag_data = BMM150_read_mag_data(&bmm150);
     // gps_data = LC76G_read_data();
 
     // update mission struct
@@ -393,10 +399,16 @@ int main(void)
     global_mission_data.ACCEL_P = imu_data.accel_p;
     global_mission_data.ACCEL_Y = imu_data.accel_y;
 
-    // Magnitutude
-    global_mission_data.MAG_P = mag_data.x;
-    global_mission_data.MAG_R = mag_data.z;
-    global_mission_data.MAG_Y = mag_data.y;
+
+    // update magnetometer
+    global_mission_data.MAG_R = rand() % 1000 / 1000.0; // mag_r
+    global_mission_data.MAG_P = rand() % 1000 / 1000.0; // mag_p
+    global_mission_data.MAG_Y = rand() % 1000 / 1000.0; // mag_y
+    /*
+    global_mission_data.MAG_R =  mag_data.x; // mag_r
+    global_mission_data.MAG_P = mag_data.y; // mag_p
+    global_mission_data.MAG_Y = mag_data.z; // mag_y
+    */
 
     // update GPS
     /*str_len = sprintf(global_mission_data.GPS_TIME, "%d:%d:%d",
@@ -478,6 +490,65 @@ int main(void)
       super_hot_resistor_cycles = 0;
     }
 
+    // Set Real Time Clock if needed
+    if (update_time) {
+      // Set RTC to 00:00:00
+      RTC_TimeTypeDef sTime = {0};
+      RTC_DateTypeDef sDate = {0};
+
+      sTime.Hours = 0;
+      sTime.Minutes = 0;
+      sTime.Seconds = 0;
+
+      if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      sDate.WeekDay = RTC_WEEKDAY_FRIDAY;
+      sDate.Month = RTC_MONTH_JANUARY;
+      sDate.Date = 2;
+      sDate.Year = 70;
+
+      if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      /*
+      char *string_remainder;
+      sTime.Hours = strtol(global_mission_data.MISSION_TIME, &string_remainder, 10);
+      sTime.Minutes = strtol(++string_remainder, &string_remainder, 10);
+      sTime.Seconds = strtol(++string_remainder, &string_remainder, 10);
+
+      if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+      */
+      update_time = 0;
+    }
+
+    if (!gps_time_enable) {
+      // Update mission time
+      RTC_DateTypeDef getDate = {0};
+      RTC_TimeTypeDef getTime = {0};
+
+      if (HAL_RTC_GetTime(&hrtc, &getTime, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      // Required call to GetDate to unlock time registers
+      if (HAL_RTC_GetDate(&hrtc, &getDate, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      snprintf(global_mission_data.MISSION_TIME, 9, "%02d:%02d:%02d",
+              getTime.Hours, getTime.Minutes, getTime.Seconds);
+    }
+    
     HAL_Delay(1000);
 
     HAL_GPIO_WritePin(USR_LED_GPIO_Port, USR_LED_Pin, GPIO_PIN_RESET);
@@ -1325,6 +1396,36 @@ static void MX_USART3_UART_Init(void)
 /**
  * Enable DMA controller clock
  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMAMUX1_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+
+  // Initialize low level stuff
+  /*
+  LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_1, LL_DMA_CHANNEL_4);
+  LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_STREAM_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+  LL_DMA_SetStreamPriorityLevel(DMA1, LL_DMA_STREAM_1, LL_DMA_PRIORITY_LOW);
+  LL_DMA_SetMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MODE_CIRCULAR);
+  LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_PERIPH_NOINCREMENT);
+  LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MEMORY_INCREMENT);
+  LL_DMA_SetPeriphSize(DMA1, LL_DMA_STREAM_1, LL_DMA_PDATAALIGN_BYTE);
+  LL_DMA_SetMemorySize(DMA1, LL_DMA_STREAM_1, LL_DMA_MDATAALIGN_BYTE);
+  LL_DMA_DisableFifoMode(DMA1, LL_DMA_STREAM_1);
+  LL_DMA_SetPeriphAddress(DMA1, LL_DMA_STREAM_1, LL_USART_DMA_GetRegAddr(USART3));
+  LL_DMA_SetMemoryAddress(DMA1, LL_DMA_STREAM_1, (uint32_t)gps_dma_buffer);
+  LL_DMA_SetDataLength(DMA1, LL_DMA_STREAM_1, ARRAY_LEN(gps_dma_buffer));
+  LL_DMA_EnableStream(DMA1, LL_DMA_STREAM_1);
+  */
+}
+
 //static void MX_DMA_Init(void)
 //{
 //
