@@ -17,6 +17,7 @@
 "./Drivers/ICM42688P/AccelerationCalculations.o"
 "./Drivers/ICM42688P/ICM42688PSPI.o"
 "./Drivers/LC76G/LC76G.o"
+"./Drivers/LC76G/gps.o"
 "./Drivers/MS5607/AltitudeCalculations.o"
 "./Drivers/MS5607/AltitudeCalculationsAccel.o"
 "./Drivers/MS5607/MS5607SPI.o"

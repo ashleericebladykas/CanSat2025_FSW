@@ -431,7 +431,7 @@ int main(void)
                         // gyro_y
       );
       // str_len = sizeof(telemetry_string);
-      //HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
+      HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
       memset(telemetry_string, 0, sizeof(telemetry_string)); // flush array
       str_len = sprintf(telemetry_string, ",%d,%d,%d,%.1f,%.1f,%.1f,%d,%s,%.1f,%.4f,%.4f,%d,%s",
                         global_mission_data.ACCEL_R, // accel_r
@@ -447,7 +447,7 @@ int main(void)
                         global_mission_data.GPS_LONGITUDE,           // temp; gps longitude
                         global_mission_data.GPS_SATS,                // temp; # of gps satellites
                         global_mission_data.CMD_ECHO);
-      //HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
+      HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
 
       /*char test_string[30];
       str_len = sprintf(test_string, "accel_z: %d", imu_data.accel_z);

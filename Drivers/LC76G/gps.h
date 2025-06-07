@@ -5,6 +5,9 @@
  *      Author: Bulanov Konstantin
  */
 
+#include <stdint.h>
+#include "uart_interrupt.h"
+
 #define GPS_DEBUG	0
 #define	GPS_USART	&huart5
 #define GPSBUFSIZE  128       // GPS buffer size

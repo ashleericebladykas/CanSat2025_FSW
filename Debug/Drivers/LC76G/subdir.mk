@@ -5,13 +5,16 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../Drivers/LC76G/LC76G.c 
+../Drivers/LC76G/LC76G.c \
+../Drivers/LC76G/gps.c 
 
 OBJS += \
-./Drivers/LC76G/LC76G.o 
+./Drivers/LC76G/LC76G.o \
+./Drivers/LC76G/gps.o 
 
 C_DEPS += \
-./Drivers/LC76G/LC76G.d 
+./Drivers/LC76G/LC76G.d \
+./Drivers/LC76G/gps.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -21,7 +24,7 @@ Drivers/LC76G/%.o Drivers/LC76G/%.su Drivers/LC76G/%.cyclo: ../Drivers/LC76G/%.c
 clean: clean-Drivers-2f-LC76G
 
 clean-Drivers-2f-LC76G:
-	-$(RM) ./Drivers/LC76G/LC76G.cyclo ./Drivers/LC76G/LC76G.d ./Drivers/LC76G/LC76G.o ./Drivers/LC76G/LC76G.su
+	-$(RM) ./Drivers/LC76G/LC76G.cyclo ./Drivers/LC76G/LC76G.d ./Drivers/LC76G/LC76G.o ./Drivers/LC76G/LC76G.su ./Drivers/LC76G/gps.cyclo ./Drivers/LC76G/gps.d ./Drivers/LC76G/gps.o ./Drivers/LC76G/gps.su
 
 .PHONY: clean-Drivers-2f-LC76G
 
