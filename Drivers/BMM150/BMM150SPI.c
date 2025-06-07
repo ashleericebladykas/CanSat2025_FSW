@@ -34,13 +34,20 @@ BMM150_INTF_RET_TYPE BMM150_SPI_read(uint8_t reg_addr, uint8_t *reg_data, uint32
 	HAL_StatusTypeDef status = HAL_OK;
 	struct spi_interface *spi = (struct spi_interface *)intf_ptr;
 
+	// First byte needs to have MSB set to indicate a read operation
+	uint8_t tx_buf[1];
+    tx_buf[0] = reg_addr | 0x80;
+	// First byte received is dummy data
+	uint8_t rx_buf[length + 1];
+
 	BMM150_enable_chip_select(spi->chip_select_port, spi->chip_select_pin);
 
-	status = HAL_SPI_Transmit(spi->spi_handle, reg_addr, sizeof(reg_addr), BMM150_TIMEOUT_DURATION);
-	status = HAL_SPI_Receive(spi->spi_handle, reg_data, length, BMM150_TIMEOUT_DURATION);
+	status = HAL_SPI_TransmitReceive(spi->spi_handle, tx_buf, rx_buf, length + 1, BMM150_TIMEOUT_DURATION);
 
 	BMM150_disable_chip_select(spi->chip_select_port, spi->chip_select_pin);
 
+	if (status == HAL_OK)
+		memcpy(reg_data, &rx_buf[1], length);
 
 	return (BMM150_INTF_RET_TYPE)status;
 }
@@ -50,10 +57,14 @@ BMM150_INTF_RET_TYPE BMM150_SPI_write(uint8_t reg_addr, uint8_t *reg_data, uint3
 	HAL_StatusTypeDef status = HAL_OK;
 	struct spi_interface *spi = (struct spi_interface *)intf_ptr;
 
+	// Ensure that MSB is 0 to indicate a write operation
+	uint8_t tx_buf[length + 1];
+	tx_buf[0] = reg_addr & 0x7F;
+	memcpy(&tx_buf[1], reg_data, length);
+
 	BMM150_enable_chip_select(spi->chip_select_port, spi->chip_select_pin);
 
-	status = HAL_SPI_Transmit(spi->spi_handle, reg_addr, sizeof(reg_addr), BMM150_TIMEOUT_DURATION);
-	status = HAL_SPI_Transmit(spi->spi_handle, reg_data, length, BMM150_TIMEOUT_DURATION);
+	status = HAL_SPI_Transmit(spi->spi_handle, tx_buf, length + 1, BMM150_TIMEOUT_DURATION);
 
 	BMM150_disable_chip_select(spi->chip_select_port, spi->chip_select_pin);
 
