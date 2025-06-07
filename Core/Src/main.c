@@ -382,6 +382,8 @@ int main(void)
       global_mission_data.ALTITUDE_OFFSET = global_mission_data.ALTITUDE; // set the offset to the current altitude
       is_calibrated = 0; // reset the flag
     }
+    // Use altitude to update the mission state as needed
+    determineState(global_mission_data.ALTITUDE);
 
     // update battery voltage
     uint16_t battery_mV = 0;
