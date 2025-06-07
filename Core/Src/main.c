@@ -23,7 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "global.h"
-#include "commands.h"
+//#include "commands.h"
 #include "uart_interrupt.h"
 
 #include "../../Drivers/ICM42688P/ICM42688PSPI.h"
@@ -145,7 +145,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
+//  MX_DMA_Init();
   MX_ADC1_Init();
   MX_I2C3_Init();
   MX_IRTIM_Init();
@@ -218,23 +218,25 @@ int main(void)
   while (1)
   {
 
+
     // enable interrupts
     HAL_NVIC_EnableIRQ(USART3_IRQn);
 
     // receive command (15 bytes max?)
-    uint8_t rx_buff[25];
-    HAL_UART_Receive_IT(&huart3, rx_buff, 25);
+    uint8_t rx_buff[22];
+
+    HAL_UART_Receive_IT(&huart3, rx_buff, 22);
     //HAL_UART_Transmit(&huart3, rx_buff, sizeof(rx_buff), HAL_MAX_DELAY);
 
     // step1: convert rx_buff array of "uint8_t"s into array of "chars"
     char *char_array = (char *)rx_buff;
-    char rx_string[25];
+    char rx_string[22];
 
     // step2: convert array of chars into string  (https://www.geeksforgeeks.org/convert-character-array-to-string-in-c/)
-    strncpy(rx_string, char_array, 25);
+    strncpy(rx_string, char_array, 22);
     //strcpy(global_mission_data.CMD_ECHO, rx_string);
 
-    rx_string[24] = '\0';
+    rx_string[22] = '\0';
     // HAL_UART_Transmit(&huart3, rx_string, sizeof(rx_string), HAL_MAX_DELAY);
 
     // step3: use string::compare and chop off the first 12 characters of the string (https://cplusplus.com/reference/string/string/compare/)
@@ -254,9 +256,16 @@ int main(void)
     //}
     if (strncmp(rx_string, "CMD,3174,CX,ON", 14) == 0)
     {
+//    	GPIO_TypeDef* CXON_Port = "A";
+//    	uint16_t CXON_Pin = 8;
+//		HAL_GPIO_WritePin(CXON_Port,CXON_Pin, GPIO_PIN_SET);
+//		HAL_GPIO_WritePin(CXON_Port,CXON_Pin, GPIO_PIN_RESET);
+//    	 __SEV();
       telemetry_enable = 1;
       char c_echo[] = "CXON";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
+
+
     }
     else if (strncmp(rx_string, "CMD,3174,CX,OFF", 15) == 0)
     {
@@ -283,7 +292,8 @@ int main(void)
         strcpy(global_mission_data.MISSION_TIME, "00:00:00");
         gps_time_enable = 0;
       }
-
+      char c_echo[] = "ST";
+      strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
     else if (strncmp(rx_string, "CMD,3174,SIM,ENABLE", 19) == 0)
     {
@@ -339,8 +349,9 @@ int main(void)
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
     else {
-
+//      HAL_UART_Transmit(&huart3, rx_string, sizeof(rx_string), HAL_MAX_DELAY);
     }
+	memset(rx_buff, 0, sizeof(rx_buff));
 
     // Receive command from ground station
     //HAL_UART_Receive(&huart3, command, 64, 10);
@@ -365,8 +376,12 @@ int main(void)
       global_mission_data.PRESSURE = bmp_data.pressure_kPa;
     }
     // if the calibrating flag is true, calibrate the altitude
-    global_mission_data.ALTITUDE = calculateAltitude(global_mission_data.PRESSURE, is_calibrated);
-    is_calibrated = 0; // reset the flag
+    global_mission_data.ALTITUDE = calculateAltitude(global_mission_data.PRESSURE);
+    if (is_calibrated == 1)
+    {
+      global_mission_data.ALTITUDE_OFFSET = global_mission_data.ALTITUDE; // set the offset to the current altitude
+      is_calibrated = 0; // reset the flag
+    }
 
     // update battery voltage
     uint16_t battery_mV = 0;
@@ -383,6 +398,7 @@ int main(void)
     global_mission_data.ACCEL_R = imu_data.accel_r;
     global_mission_data.ACCEL_P = imu_data.accel_p;
     global_mission_data.ACCEL_Y = imu_data.accel_y;
+
 
     // update magnetometer
     global_mission_data.MAG_R = rand() % 1000 / 1000.0; // mag_r
@@ -1410,6 +1426,35 @@ static void MX_DMA_Init(void)
   */
 }
 
+//static void MX_DMA_Init(void)
+//{
+//
+//  /* DMA controller clock enable */
+//  __HAL_RCC_DMAMUX1_CLK_ENABLE();
+//  __HAL_RCC_DMA1_CLK_ENABLE();
+//  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
+//
+//  /* DMA interrupt init */
+//  /* DMA1_Channel3_IRQn interrupt configuration */
+//  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
+//  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+//
+//  // Initialize low level stuff
+//  LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_1, LL_DMA_CHANNEL_4);
+//  LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_STREAM_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+//  LL_DMA_SetStreamPriorityLevel(DMA1, LL_DMA_STREAM_1, LL_DMA_PRIORITY_LOW);
+//  LL_DMA_SetMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MODE_CIRCULAR);
+//  LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_PERIPH_NOINCREMENT);
+//  LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MEMORY_INCREMENT);
+//  LL_DMA_SetPeriphSize(DMA1, LL_DMA_STREAM_1, LL_DMA_PDATAALIGN_BYTE);
+//  LL_DMA_SetMemorySize(DMA1, LL_DMA_STREAM_1, LL_DMA_MDATAALIGN_BYTE);
+//  LL_DMA_DisableFifoMode(DMA1, LL_DMA_STREAM_1);
+//  LL_DMA_SetPeriphAddress(DMA1, LL_DMA_STREAM_1, LL_USART_DMA_GetRegAddr(USART3));
+//  LL_DMA_SetMemoryAddress(DMA1, LL_DMA_STREAM_1, (uint32_t)gps_dma_buffer);
+//  LL_DMA_SetDataLength(DMA1, LL_DMA_STREAM_1, ARRAY_LEN(gps_dma_buffer));
+//  LL_DMA_EnableStream(DMA1, LL_DMA_STREAM_1);
+//}
+
 // Needed to facilitate DMA transfer from GPS module
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
     if (huart->Instance == UART5) {
@@ -1494,7 +1539,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
+  GPIO_InitStruct.Alternate = GPIO_AF15_EVENTOUT;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB4 PB6 */

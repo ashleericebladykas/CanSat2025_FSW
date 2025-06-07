@@ -154,7 +154,7 @@ extern "C"
   // calibraing : 1 = True, 0 = False
 
   // pressure should be input in kilopascals!!
-  float calculateAltitude(double pressure, int calibrating);
+  float calculateAltitude(double pressure);
 
 
 #ifdef __cplusplus
