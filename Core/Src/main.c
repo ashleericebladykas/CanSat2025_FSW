@@ -23,7 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "global.h"
-#include "commands.h"
+//#include "commands.h"
 #include "uart_interrupt.h"
 
 #include "../../Drivers/ICM42688P/ICM42688PSPI.h"
@@ -145,7 +145,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
+//  MX_DMA_Init();
   MX_ADC1_Init();
   MX_I2C3_Init();
   MX_IRTIM_Init();
@@ -216,6 +216,7 @@ int main(void)
   while (1)
   {
 
+
     // enable interrupts
     HAL_NVIC_EnableIRQ(USART3_IRQn);
 
@@ -252,6 +253,11 @@ int main(void)
     //}
     if (strncmp(rx_string, "CMD,3174,CX,ON", 14) == 0)
     {
+//    	GPIO_TypeDef* CXON_Port = "A";
+//    	uint16_t CXON_Pin = 8;
+//		HAL_GPIO_WritePin(CXON_Port,CXON_Pin, GPIO_PIN_SET);
+//		HAL_GPIO_WritePin(CXON_Port,CXON_Pin, GPIO_PIN_RESET);
+//    	 __SEV();
       telemetry_enable = 1;
       char c_echo[] = "CXON";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
@@ -276,6 +282,9 @@ int main(void)
         // if the string is not 8 characters long, set it to "00:00:00"
         strcpy(global_mission_data.MISSION_TIME, "00:00:00");
       }
+
+      char c_echo[] = "ST";
+      strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
     else if (strncmp(rx_string, "CMD,3174,SIM,ENABLE", 19) == 0)
     {
@@ -1311,34 +1320,34 @@ static void MX_USART3_UART_Init(void)
 /**
  * Enable DMA controller clock
  */
-static void MX_DMA_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_DMAMUX1_CLK_ENABLE();
-  __HAL_RCC_DMA1_CLK_ENABLE();
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
-
-  /* DMA interrupt init */
-  /* DMA1_Channel3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
-
-  // Initialize low level stuff
-  LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_1, LL_DMA_CHANNEL_4);
-  LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_STREAM_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
-  LL_DMA_SetStreamPriorityLevel(DMA1, LL_DMA_STREAM_1, LL_DMA_PRIORITY_LOW);
-  LL_DMA_SetMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MODE_CIRCULAR);
-  LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_PERIPH_NOINCREMENT);
-  LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MEMORY_INCREMENT);
-  LL_DMA_SetPeriphSize(DMA1, LL_DMA_STREAM_1, LL_DMA_PDATAALIGN_BYTE);
-  LL_DMA_SetMemorySize(DMA1, LL_DMA_STREAM_1, LL_DMA_MDATAALIGN_BYTE);
-  LL_DMA_DisableFifoMode(DMA1, LL_DMA_STREAM_1);
-  LL_DMA_SetPeriphAddress(DMA1, LL_DMA_STREAM_1, LL_USART_DMA_GetRegAddr(USART3));
-  LL_DMA_SetMemoryAddress(DMA1, LL_DMA_STREAM_1, (uint32_t)gps_dma_buffer);
-  LL_DMA_SetDataLength(DMA1, LL_DMA_STREAM_1, ARRAY_LEN(gps_dma_buffer));
-  LL_DMA_EnableStream(DMA1, LL_DMA_STREAM_1);
-}
+//static void MX_DMA_Init(void)
+//{
+//
+//  /* DMA controller clock enable */
+//  __HAL_RCC_DMAMUX1_CLK_ENABLE();
+//  __HAL_RCC_DMA1_CLK_ENABLE();
+//  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
+//
+//  /* DMA interrupt init */
+//  /* DMA1_Channel3_IRQn interrupt configuration */
+//  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
+//  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+//
+//  // Initialize low level stuff
+//  LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_1, LL_DMA_CHANNEL_4);
+//  LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_STREAM_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+//  LL_DMA_SetStreamPriorityLevel(DMA1, LL_DMA_STREAM_1, LL_DMA_PRIORITY_LOW);
+//  LL_DMA_SetMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MODE_CIRCULAR);
+//  LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_PERIPH_NOINCREMENT);
+//  LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MEMORY_INCREMENT);
+//  LL_DMA_SetPeriphSize(DMA1, LL_DMA_STREAM_1, LL_DMA_PDATAALIGN_BYTE);
+//  LL_DMA_SetMemorySize(DMA1, LL_DMA_STREAM_1, LL_DMA_MDATAALIGN_BYTE);
+//  LL_DMA_DisableFifoMode(DMA1, LL_DMA_STREAM_1);
+//  LL_DMA_SetPeriphAddress(DMA1, LL_DMA_STREAM_1, LL_USART_DMA_GetRegAddr(USART3));
+//  LL_DMA_SetMemoryAddress(DMA1, LL_DMA_STREAM_1, (uint32_t)gps_dma_buffer);
+//  LL_DMA_SetDataLength(DMA1, LL_DMA_STREAM_1, ARRAY_LEN(gps_dma_buffer));
+//  LL_DMA_EnableStream(DMA1, LL_DMA_STREAM_1);
+//}
 
 // Needed to facilitate DMA transfer from GPS module
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
@@ -1424,7 +1433,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
+  GPIO_InitStruct.Alternate = GPIO_AF15_EVENTOUT;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB4 PB6 */

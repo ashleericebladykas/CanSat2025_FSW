@@ -22,9 +22,8 @@ extern volatile uint8_t gps_time_enable;
 extern volatile uint8_t is_calibrated; 
 extern volatile uint8_t mec_wire_enable;
 extern volatile uint8_t simulation_pre;
-extern volatile double altitude_offset;
-extern volatile double simulated_pressure;
 extern volatile float altitude_offset;
+extern volatile double simulated_pressure;
 
 //structs
 
