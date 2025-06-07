@@ -154,7 +154,7 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM3_Init();
   MX_TIM8_Init();
-  //MX_TIM15_Init();
+  // MX_TIM15_Init();
   MX_TIM16_Init();
   MX_TIM17_Init();
   MX_UART5_Init();
@@ -193,7 +193,7 @@ int main(void)
   // Initializing AMT10E2
   QENC_Init_Encoder0();
 
-  //drv8838_init(&htim15, DRV_DIR_GPIO_Port, DRV_DIR_Pin);
+  // drv8838_init(&htim15, DRV_DIR_GPIO_Port, DRV_DIR_Pin);
 
   /* USER CODE END 2 */
 
@@ -222,7 +222,7 @@ int main(void)
     // receive command (15 bytes max?)
     uint8_t rx_buff[25];
     HAL_UART_Receive_IT(&huart3, rx_buff, 25);
-    //HAL_UART_Transmit(&huart3, rx_buff, sizeof(rx_buff), HAL_MAX_DELAY);
+    // HAL_UART_Transmit(&huart3, rx_buff, sizeof(rx_buff), HAL_MAX_DELAY);
 
     // step1: convert rx_buff array of "uint8_t"s into array of "chars"
     char *char_array = (char *)rx_buff;
@@ -230,7 +230,7 @@ int main(void)
 
     // step2: convert array of chars into string  (https://www.geeksforgeeks.org/convert-character-array-to-string-in-c/)
     strncpy(rx_string, char_array, 25);
-    //strcpy(global_mission_data.CMD_ECHO, rx_string);
+    // strcpy(global_mission_data.CMD_ECHO, rx_string);
 
     rx_string[24] = '\0';
     // HAL_UART_Transmit(&huart3, rx_string, sizeof(rx_string), HAL_MAX_DELAY);
@@ -268,11 +268,13 @@ int main(void)
       char *time_str = rx_string + 12;
       strncpy(arg, time_str, 9);
 
-      if (strlen(arg) == 8) {
+      if (strlen(arg) == 8)
+      {
         char *str_end;
         strncpy(global_mission_data.MISSION_TIME, time_str, 9);
       }
-      else {
+      else
+      {
         // if the string is not 8 characters long, set it to "00:00:00"
         strcpy(global_mission_data.MISSION_TIME, "00:00:00");
       }
@@ -330,17 +332,17 @@ int main(void)
       char c_echo[] = "MECOFF";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
-    else {
-
+    else
+    {
     }
 
     // Receive command from ground station
-    //HAL_UART_Receive(&huart3, command, 64, 10);
-    //process_command(command);
+    // HAL_UART_Receive(&huart3, command, 64, 10);
+    // process_command(command);
 
     bmp_data = MS5607ReadValues();
     imu_data = ICM42688P_read_data();
-    // gps_data = LC76G_read_data();
+    gps_data = LC76G_read_data();
 
     // update mission struct
     global_mission_data.TEMPERATURE = bmp_data.temperature_C;
@@ -389,7 +391,7 @@ int main(void)
     global_mission_data.GPS_LATITUDE = gps_data.lat;
     global_mission_data.GPS_LONGITUDE = gps_data.lon;
     global_mission_data.GPS_SATS = gps_data.num_sat_used;*/
-    strcpy(global_mission_data.GPS_TIME, "XX:XX:XX");
+    strcpy(global_mission_data.GPS_TIME, gps_data.UTC_time);
     global_mission_data.GPS_ALTITUDE = 0.0;
     global_mission_data.GPS_LATITUDE = 0.0;
     global_mission_data.GPS_LONGITUDE = 0.0;
@@ -400,38 +402,38 @@ int main(void)
     {
       char telemetry_string[200];
       str_len = sprintf(telemetry_string, "%d,%s,%ld,%c,%s,%3.1f,%.1f,%.1f,%.1f,%d,%d,%d",
-                       global_mission_data.TEAM_ID,      // team id
-                       global_mission_data.MISSION_TIME, // temp; mission time
-                       global_mission_data.PACKET_COUNT, // temp; packet count
-                       global_mission_data.MODE,         // mode
-                       global_mission_data.STATE,        // state
-                       global_mission_data.ALTITUDE,     // temp; altitude
-                       global_mission_data.TEMPERATURE,  // temperature
-                       global_mission_data.PRESSURE,     // pressure
-                       global_mission_data.VOLTAGE,
-                       global_mission_data.GYRO_R, // gyro_r
-                       global_mission_data.GYRO_P, // gyro_p
-                       global_mission_data.GYRO_Y
-                       // gyro_y
+                        global_mission_data.TEAM_ID,      // team id
+                        global_mission_data.MISSION_TIME, // temp; mission time
+                        global_mission_data.PACKET_COUNT, // temp; packet count
+                        global_mission_data.MODE,         // mode
+                        global_mission_data.STATE,        // state
+                        global_mission_data.ALTITUDE,     // temp; altitude
+                        global_mission_data.TEMPERATURE,  // temperature
+                        global_mission_data.PRESSURE,     // pressure
+                        global_mission_data.VOLTAGE,
+                        global_mission_data.GYRO_R, // gyro_r
+                        global_mission_data.GYRO_P, // gyro_p
+                        global_mission_data.GYRO_Y
+                        // gyro_y
       );
       // str_len = sizeof(telemetry_string);
-      HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
+      //HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
       memset(telemetry_string, 0, sizeof(telemetry_string)); // flush array
       str_len = sprintf(telemetry_string, ",%d,%d,%d,%.1f,%.1f,%.1f,%d,%s,%.1f,%.4f,%.4f,%d,%s",
-                       global_mission_data.ACCEL_R, // accel_r
-                       global_mission_data.ACCEL_P, // accel_p
-                       global_mission_data.ACCEL_Y,
-                       global_mission_data.MAG_R,                   // temp; mag_r
-                       global_mission_data.MAG_P,                   // temp; mag_p
-                       global_mission_data.MAG_Y,                   // temp; mag_y
-                       global_mission_data.AUTO_GYRO_ROTATION_RATE, // temp; auto-gyro rotation rate
-                       global_mission_data.GPS_TIME,                // temp; gps time
-                       global_mission_data.GPS_ALTITUDE,            // temp; gps altitude
-                       global_mission_data.GPS_LATITUDE,            // temp; gps latitude
-                       global_mission_data.GPS_LONGITUDE,           // temp; gps longitude
-                       global_mission_data.GPS_SATS,                // temp; # of gps satellites
-                       global_mission_data.CMD_ECHO);
-      HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
+                        global_mission_data.ACCEL_R, // accel_r
+                        global_mission_data.ACCEL_P, // accel_p
+                        global_mission_data.ACCEL_Y,
+                        global_mission_data.MAG_R,                   // temp; mag_r
+                        global_mission_data.MAG_P,                   // temp; mag_p
+                        global_mission_data.MAG_Y,                   // temp; mag_y
+                        global_mission_data.AUTO_GYRO_ROTATION_RATE, // temp; auto-gyro rotation rate
+                        global_mission_data.GPS_TIME,                // temp; gps time
+                        global_mission_data.GPS_ALTITUDE,            // temp; gps altitude
+                        global_mission_data.GPS_LATITUDE,            // temp; gps latitude
+                        global_mission_data.GPS_LONGITUDE,           // temp; gps longitude
+                        global_mission_data.GPS_SATS,                // temp; # of gps satellites
+                        global_mission_data.CMD_ECHO);
+      //HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
 
       /*char test_string[30];
       str_len = sprintf(test_string, "accel_z: %d", imu_data.accel_z);
@@ -456,7 +458,7 @@ int main(void)
     else
     {
       // turn resistor off
-    	HAL_GPIO_WritePin(DRV_PWM_GPIO_Port, DRV_PWM_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(DRV_PWM_GPIO_Port, DRV_PWM_Pin, GPIO_PIN_RESET);
       super_hot_resistor_cycles = 0;
     }
 
@@ -1313,7 +1315,7 @@ static void MX_DMA_Init(void)
   /* DMA controller clock enable */
   __HAL_RCC_DMAMUX1_CLK_ENABLE();
   __HAL_RCC_DMA1_CLK_ENABLE();
-  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
+  // LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
 
   /* DMA interrupt init */
   /* DMA1_Channel3_IRQn interrupt configuration */
@@ -1321,7 +1323,7 @@ static void MX_DMA_Init(void)
   HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
 
   // Initialize low level stuff
-  LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_1, LL_DMA_CHANNEL_4);
+  /*LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_1, LL_DMA_CHANNEL_4);
   LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_STREAM_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
   LL_DMA_SetStreamPriorityLevel(DMA1, LL_DMA_STREAM_1, LL_DMA_PRIORITY_LOW);
   LL_DMA_SetMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MODE_CIRCULAR);
@@ -1333,25 +1335,26 @@ static void MX_DMA_Init(void)
   LL_DMA_SetPeriphAddress(DMA1, LL_DMA_STREAM_1, LL_USART_DMA_GetRegAddr(USART3));
   LL_DMA_SetMemoryAddress(DMA1, LL_DMA_STREAM_1, (uint32_t)gps_dma_buffer);
   LL_DMA_SetDataLength(DMA1, LL_DMA_STREAM_1, ARRAY_LEN(gps_dma_buffer));
-  LL_DMA_EnableStream(DMA1, LL_DMA_STREAM_1);
+  LL_DMA_EnableStream(DMA1, LL_DMA_STREAM_1);*/
 }
 
 // Needed to facilitate DMA transfer from GPS module
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-    if (huart->Instance == UART5) {
-      // gps_dma_buffer now contains 'Size' bytes of received data
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+  if (huart->Instance == UART5)
+  {
+    // gps_dma_buffer now contains 'Size' bytes of received data
 
-      // Parse data stored in DMA buffer
-      LC76G_parse_data();
+    // Parse data stored in DMA buffer
+    // LC76G_parse_data();
 
-      // Empty the DMA buffer
-      memset(gps_dma_buffer, 0, GPS_DMA_BUFFER_SIZE);
+    // Empty the DMA buffer
+    // memset(gps_dma_buffer, 0, GPS_DMA_BUFFER_SIZE);
 
-      // Restart DMA reception for the next burst
-      HAL_UARTEx_ReceiveToIdle_DMA(&huart5, gps_dma_buffer, GPS_DMA_BUFFER_SIZE);
-    }
+    // Restart DMA reception for the next burst
+    // HAL_UARTEx_ReceiveToIdle_DMA(&huart5, gps_dma_buffer, GPS_DMA_BUFFER_SIZE);
+  }
 }
-
 
 /**
  * @brief GPIO Initialization Function

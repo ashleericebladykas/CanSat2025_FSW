@@ -1,2 +1,2 @@
-../Drivers/LC76G/LC76G.c:5:6:LC76G_init	1
-../Drivers/LC76G/LC76G.c:28:16:LC76G_read_data	12
+../Drivers/LC76G/LC76G.c:9:6:LC76G_init	2
+../Drivers/LC76G/LC76G.c:289:16:LC76G_read_data	3

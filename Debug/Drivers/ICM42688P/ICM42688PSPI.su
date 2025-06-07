@@ -1,9 +1,9 @@
 ../Drivers/ICM42688P/ICM42688PSPI.c:17:13:ICM42688P_disable_chip_select	8	static
 ../Drivers/ICM42688P/ICM42688PSPI.c:22:13:ICM42688P_enable_chip_select	8	static
 ../Drivers/ICM42688P/ICM42688PSPI.c:27:26:ICM42688P_write_reg	24	static
-../Drivers/ICM42688P/ICM42688PSPI.c:36:9:ICM42688P_read_reg	32	static
-../Drivers/ICM42688P/ICM42688PSPI.c:52:9:ICM42688P_init	24	static
-../Drivers/ICM42688P/ICM42688PSPI.c:74:9:Get_Accel_P	16	static
-../Drivers/ICM42688P/ICM42688PSPI.c:79:9:Get_Accel_Y	16	static
-../Drivers/ICM42688P/ICM42688PSPI.c:84:9:Get_Accel_R	16	static
-../Drivers/ICM42688P/ICM42688PSPI.c:89:21:ICM42688P_read_data	48	static
+../Drivers/ICM42688P/ICM42688PSPI.c:36:9:ICM42688P_read_reg	40	static
+../Drivers/ICM42688P/ICM42688PSPI.c:50:9:ICM42688P_init	24	static
+../Drivers/ICM42688P/ICM42688PSPI.c:72:9:Get_Accel_P	16	static
+../Drivers/ICM42688P/ICM42688PSPI.c:77:9:Get_Accel_Y	16	static
+../Drivers/ICM42688P/ICM42688PSPI.c:82:9:Get_Accel_R	16	static
+../Drivers/ICM42688P/ICM42688PSPI.c:87:21:ICM42688P_read_data	48	static

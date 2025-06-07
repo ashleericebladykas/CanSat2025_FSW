@@ -5,11 +5,11 @@
 #include "uart_interrupt.h"
 
 #define TIMEOUT 5
-#define ARRAY_LEN(x)            (sizeof(x) / sizeof((x)[0]))
+#define ARRAY_LEN(x) (sizeof(x) / sizeof((x)[0]))
 
 // DMA buffer aligned to 4-bytes
-#define GPS_DMA_BUFFER_SIZE 128
-extern uint8_t gps_dma_buffer[GPS_DMA_BUFFER_SIZE] __attribute__((aligned(4)));
+// #define GPS_DMA_BUFFER_SIZE 128
+// extern uint8_t gps_dma_buffer[GPS_DMA_BUFFER_SIZE] __attribute__((aligned(4)));
 
 /* Define GPS commands */
 // Checksums calculated using: https://nmeachecksum.eqth.net/
@@ -26,10 +26,13 @@ static const char LC76_DISABLE_VTG8[] = "$PAIR062,5,0*3B";
 // Time format: HH:MM:SS
 // Degrees in decimal degrees
 // Altitude in meters above sea level
-typedef struct {
-    uint8_t time_H;         // UTC Time
+typedef struct
+{
+    uint8_t time_H; // UTC Time
     uint8_t time_M;
     uint8_t time_S;
+
+    char UTC_time[9];
 
     double lat;
     double lon;
@@ -37,13 +40,13 @@ typedef struct {
     double altitude;
 
     uint8_t num_sat_used;
-}LC76G_gps_data;
+} LC76G_gps_data;
 extern LC76G_gps_data gps_data;
 
 /* Define functions */
 void LC76G_init();
 void LC76_receive_data();
-void usart_process_data(const void* data, size_t len);
+void usart_process_data(const void *data, size_t len);
 void LC76G_parse_data();
 LC76G_gps_data LC76G_read_data();
 // void LC76G_Send_Command(char *data);
