@@ -207,6 +207,19 @@ int main(void)
   BMM150_mag_data mag_data;
   LC76G_gps_data gps_data;
 
+  // Set RTC to 00:00:00
+  RTC_TimeTypeDef sTime = {0};
+  sTime.Hours = 0;
+  sTime.Minutes = 0;
+  sTime.Seconds = 0;
+
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  uint8_t update_time = 0;
+
   uint8_t super_hot_resistor_cycle_limit = 30;
   uint8_t super_hot_resistor_cycles = 0;
   char command[64] = {0};
@@ -271,11 +284,17 @@ int main(void)
       if (strlen(arg) == 8) {
         char *str_end;
         strncpy(global_mission_data.MISSION_TIME, time_str, 9);
-      }
-      else {
+        // Set a flag telling us to update the RTC
+        update_time = 1;
+        gps_time_enable = 0;
+      } else if (strncmp(time_str, "GPS", 3)) {
+        gps_time_enable = 1;
+      } else {
         // if the string is not 8 characters long, set it to "00:00:00"
         strcpy(global_mission_data.MISSION_TIME, "00:00:00");
+        gps_time_enable = 0;
       }
+
     }
     else if (strncmp(rx_string, "CMD,3174,SIM,ENABLE", 19) == 0)
     {
@@ -460,6 +479,32 @@ int main(void)
       super_hot_resistor_cycles = 0;
     }
 
+    // Set Real Time Clock if needed
+    if (update_time) {
+      char *string_remainder;
+      sTime.Hours = strtol(global_mission_data.MISSION_TIME, &string_remainder, 10);
+      sTime.Minutes = strtol(++string_remainder, &string_remainder, 10);
+      sTime.Seconds = strtol(++string_remainder, &string_remainder, 10);
+
+      if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+    }
+
+    if (!gps_time_enable) {
+      // Update mission time
+      RTC_TimeTypeDef getTime = {0};
+
+      if (HAL_RTC_GetTime(&hrtc, &getTime, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      snprintf(global_mission_data.MISSION_TIME, 8, "%02d:%02d:%02d",
+              getTime.Hours, getTime.Minutes, getTime.Seconds);
+    }
+    
     HAL_Delay(1000);
 
     HAL_GPIO_WritePin(USR_LED_GPIO_Port, USR_LED_Pin, GPIO_PIN_RESET);
