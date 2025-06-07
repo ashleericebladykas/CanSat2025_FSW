@@ -221,19 +221,20 @@ int main(void)
     HAL_NVIC_EnableIRQ(USART3_IRQn);
 
     // receive command (15 bytes max?)
-    uint8_t rx_buff[25];
-    HAL_UART_Receive_IT(&huart3, rx_buff, 25);
+    uint8_t rx_buff[22];
+
+    HAL_UART_Receive_IT(&huart3, rx_buff, 22);
     //HAL_UART_Transmit(&huart3, rx_buff, sizeof(rx_buff), HAL_MAX_DELAY);
 
     // step1: convert rx_buff array of "uint8_t"s into array of "chars"
     char *char_array = (char *)rx_buff;
-    char rx_string[25];
+    char rx_string[22];
 
     // step2: convert array of chars into string  (https://www.geeksforgeeks.org/convert-character-array-to-string-in-c/)
-    strncpy(rx_string, char_array, 25);
+    strncpy(rx_string, char_array, 22);
     //strcpy(global_mission_data.CMD_ECHO, rx_string);
 
-    rx_string[24] = '\0';
+    rx_string[22] = '\0';
     // HAL_UART_Transmit(&huart3, rx_string, sizeof(rx_string), HAL_MAX_DELAY);
 
     // step3: use string::compare and chop off the first 12 characters of the string (https://cplusplus.com/reference/string/string/compare/)
@@ -261,6 +262,8 @@ int main(void)
       telemetry_enable = 1;
       char c_echo[] = "CXON";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
+
+
     }
     else if (strncmp(rx_string, "CMD,3174,CX,OFF", 15) == 0)
     {
@@ -340,8 +343,9 @@ int main(void)
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
     else {
-
+//      HAL_UART_Transmit(&huart3, rx_string, sizeof(rx_string), HAL_MAX_DELAY);
     }
+	memset(rx_buff, 0, sizeof(rx_buff));
 
     // Receive command from ground station
     //HAL_UART_Receive(&huart3, command, 64, 10);
@@ -368,7 +372,7 @@ int main(void)
     global_mission_data.ALTITUDE = calculateAltitude(global_mission_data.PRESSURE);
     if (is_calibrated == 1)
     {
-      altitude_offset = global_mission_data.ALTITUDE; // set the offset to the current altitude
+      global_mission_data.ALTITUDE_OFFSET = global_mission_data.ALTITUDE; // set the offset to the current altitude
       is_calibrated = 0; // reset the flag
     }
 

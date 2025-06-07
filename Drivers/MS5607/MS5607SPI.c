@@ -354,7 +354,7 @@ float calculateAltitude(double pressure) {
 	//       // Relative Altitude of CanSat
 	//    return h_meter - calibrated_altitude;
 	// }
-  return h_meter - altitude_offset;
+  return h_meter - global_mission_data.ALTITUDE_OFFSET;
 	//return 100.0;
 }
 

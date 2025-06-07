@@ -22,7 +22,6 @@ extern volatile uint8_t gps_time_enable;
 extern volatile uint8_t is_calibrated; 
 extern volatile uint8_t mec_wire_enable;
 extern volatile uint8_t simulation_pre;
-extern volatile float altitude_offset;
 extern volatile double simulated_pressure;
 
 //structs
@@ -61,6 +60,8 @@ typedef struct
 	uint8_t GPS_SATS;
 
 	char CMD_ECHO[CMD_ECHO_LEN];
+
+	float ALTITUDE_OFFSET;
 
 	// might add more as needed (optional)
 } Mission_Data;
