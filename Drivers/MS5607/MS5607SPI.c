@@ -339,21 +339,22 @@ float const accel_tolerance = 0.1;
 
 float calibrated_altitude = 0.00;
 
-float calculateAltitude(double pressure, int calibrating) {
+float calculateAltitude(double pressure) {
 	double pressure_mb = 33.8639 * (0.2953 * pressure);
 	float h_meter = 0.3048 * (1 - pow((pressure_mb / 1013.25), 0.190284)) * 145366.54;
-	if (calibrating == 1)
-	{
-		// Absolute Altitude of the ground station
-	    calibrated_altitude = h_meter;
-	    // Relative Altitude of GCS
-	    return 0;
-	}
-	else
-	{
-	      // Relative Altitude of CanSat
-	   return h_meter - calibrated_altitude;
-	}
+	// if (calibrating == 1)
+	// {
+	// 	// Absolute Altitude of the ground station
+	//     calibrated_altitude = h_meter;
+	//     // Relative Altitude of GCS
+	//     return 0;
+	// }
+	// else
+	// {
+	//       // Relative Altitude of CanSat
+	//    return h_meter - calibrated_altitude;
+	// }
+  return h_meter - global_mission_data.ALTITUDE_OFFSET;
 	//return 100.0;
 }
 
