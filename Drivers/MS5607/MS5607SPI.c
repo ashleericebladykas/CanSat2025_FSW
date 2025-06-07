@@ -352,22 +352,28 @@ Temperature - Celcius - double
 // https://www.weather.gov/media/epz/wxcalc/pressureAltitude.pdf
 // The altitude equation is for absolute altitude.
 // calibraing : 1 = True, 0 = False
-float caluclateAltitude(double pressure, int calibrating){
-    float pressure_mb = 33.8639 * (0.2953 * pressure);
-	float h_meter = 0.3048 * (1 - pow((pressure_mb / 1013.25), 0.190284)) * 145366.54;er = 0.3048*((1 - pow((pressure/1013.25), 0.190284))*145366.54);
-    if (calibrating == 1){
-        // Absolute Altitude of the ground station
-        calibrated_atitude = h_meter;
-        // Relative Altitude of GCS
-        return 0;
-    }
-    else{
-        // Relative Altitude
-        altitude_history[2] = altitude_history[1];
-        altitude_history[1] = altitude_history[0];
-        altitude_history[0] = h_meter - calibrated_atitude;
-        return altitude_history[0];
-    }
+float const alt_offset_height = 20.00;
+float const accel_tolerance = 0.1;
+
+float calibrated_altitude = 0.00;
+
+float calculateAltitude(double pressure) {
+	double pressure_mb = 33.8639 * (0.2953 * pressure);
+	float h_meter = 0.3048 * (1 - pow((pressure_mb / 1013.25), 0.190284)) * 145366.54;
+	// if (calibrating == 1)
+	// {
+	// 	// Absolute Altitude of the ground station
+	//     calibrated_altitude = h_meter;
+	//     // Relative Altitude of GCS
+	//     return 0;
+	// }
+	// else
+	// {
+	//       // Relative Altitude of CanSat
+	//    return h_meter - calibrated_altitude;
+	// }
+  return h_meter - global_mission_data.ALTITUDE_OFFSET;
+	//return 100.0;
 }
 
 // Idea is to calculateAltitude then immediately call this function

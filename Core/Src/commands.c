@@ -155,14 +155,14 @@ static CMD_STATUS perform_SIMP(const char* incoming, char* cmd_ptr){
 	return CMD_SIMP_RX;
 }
 
-static CMD_STATUS perform_CAL(){
-	if (!strncmp(global_mission_data.STATE, "LAUNCH_PAD", 10))
-		return CMD_CAL_INVLD;
-
-	altitude_offset = global_mission_data.ALTITUDE;
-	is_calibrated = 1;
-	return CMD_CAL_RX;
-}
+//static CMD_STATUS perform_CAL(){
+//	if (!strncmp(global_mission_data.STATE, "LAUNCH_PAD", 10))
+//		return CMD_CAL_INVLD;
+//
+//	global_mission_data.ALTITUDE_OFFSET = global_mission_data.ALTITUDE;
+//	is_calibrated = 1;
+//	return CMD_CAL_RX;
+//}
 
 static CMD_STATUS perform_MEC(const char* incoming, char* cmd_ptr){
 	char mec[MAX_MEC_SIZE];
