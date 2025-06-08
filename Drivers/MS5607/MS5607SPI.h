@@ -155,7 +155,7 @@ extern "C"
 
   // pressure should be input in kilopascals!!
   float calculateAltitude(double pressure);
-
+  float calculate_abs_altitude(double pressure);
 
 #ifdef __cplusplus
 }

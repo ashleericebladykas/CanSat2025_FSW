@@ -1,6 +1,6 @@
 ../Drivers/BMM150/BMM150SPI.c:13:6:BMM150_enable_chip_select	1
 ../Drivers/BMM150/BMM150SPI.c:18:6:BMM150_disable_chip_select	1
-../Drivers/BMM150/BMM150SPI.c:32:22:BMM150_SPI_read	1
-../Drivers/BMM150/BMM150SPI.c:48:22:BMM150_SPI_write	1
-../Drivers/BMM150/BMM150SPI.c:63:19:BMM150_spi_init	2
-../Drivers/BMM150/BMM150SPI.c:92:17:BMM150_read_mag_data	2
+../Drivers/BMM150/BMM150SPI.c:32:22:BMM150_SPI_read	2
+../Drivers/BMM150/BMM150SPI.c:55:22:BMM150_SPI_write	1
+../Drivers/BMM150/BMM150SPI.c:74:19:BMM150_spi_init	2
+../Drivers/BMM150/BMM150SPI.c:103:17:BMM150_read_mag_data	2

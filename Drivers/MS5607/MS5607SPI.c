@@ -375,6 +375,12 @@ float calculateAltitude(double pressure) {
   return h_meter - global_mission_data.ALTITUDE_OFFSET;
 }
 
+float calculate_abs_altitude(double pressure) {
+	double pressure_mb = 33.8639 * (0.2953 * pressure);
+	float h_meter = 0.3048 * (1 - pow((pressure_mb / 1013.25), 0.190284)) * 145366.54;
+	return h_meter;
+}
+
 // Idea is to calculateAltitude then immediately call this function
 // to detemrine state.
 void determineState(double altitude){
@@ -388,6 +394,7 @@ void determineState(double altitude){
     else if (strcmp(global_mission_data.STATE, "ASCENT") == 0) {
         if (altitude > max_altitude) max_altitude = altitude;
         apogee_difference_ratio = 0;
+        // apogee_difference_ratio = apogee_offset_height / max_altitude;
 
         if (fmax(altitude_history[0], altitude_history[1]) < max_altitude - 15) {
             mec_wire_enable = 1;
@@ -397,22 +404,22 @@ void determineState(double altitude){
         }
     }
     else if (strcmp(global_mission_data.STATE, "APOGEE") == 0) {
-        if (altitude > max_altitude * (apogee_base_ratio + apogee_difference_ratio)) {
+        if (altitude > max_altitude * (apogee_base_ratio)) {
             char _state[] = "DESCENT";
             memcpy(global_mission_data.STATE, _state, sizeof(_state));
         }
-        else if (altitude < max_altitude * (apogee_base_ratio + apogee_difference_ratio)) {
+        else if (altitude < max_altitude * (apogee_base_ratio)) {
             char _state[] = "PROBE_RELEASE";
             memcpy(global_mission_data.STATE, _state, sizeof(_state));
         }
     }
-    else if (strcmp(global_mission_data.STATE, "DESCENT")) {
-        if (altitude < max_altitude * (apogee_base_ratio + apogee_difference_ratio)) {
+    else if (strcmp(global_mission_data.STATE, "DESCENT") == 0) {
+        if (altitude < max_altitude * (apogee_base_ratio)) {
             char _state[] = "PROBE_RELEASE";
             memcpy(global_mission_data.STATE, _state, sizeof(_state));
         }
     }
-    else if (strcmp(global_mission_data.STATE, "PROBE_RELEASE")) {
+    else if (strcmp(global_mission_data.STATE, "PROBE_RELEASE") == 0) {
         if (altitude < lower_altitude_threshold) {
             char _state[] = "LANDED";
             memcpy(global_mission_data.STATE, _state, sizeof(_state));

@@ -130,6 +130,7 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 
+
   HAL_Init();
 
   /* USER CODE BEGIN Init */
@@ -209,16 +210,17 @@ int main(void)
 
   uint8_t update_time = 0;
 
-  uint8_t super_hot_resistor_cycle_limit = 30;
+  uint8_t super_hot_resistor_cycle_limit = 45;
   uint8_t super_hot_resistor_cycles = 0;
   char command[64] = {0};
+
+  int16_t prev_enc_count = 0;
+  int16_t enc_count = 0;
 
   init_mission_data();
 
   while (1)
   {
-
-
     // enable interrupts
     HAL_NVIC_EnableIRQ(USART3_IRQn);
 
@@ -362,6 +364,7 @@ int main(void)
     imu_data = ICM42688P_read_data();
     // mag_data = BMM150_read_mag_data(&bmm150);
     // gps_data = LC76G_read_data();
+    enc_count = QENC_Get_Encoder0_Count();
 
     // update mission struct
     global_mission_data.TEMPERATURE = bmp_data.temperature_C;
@@ -397,7 +400,7 @@ int main(void)
     global_mission_data.GYRO_R = imu_data.gyro_r;
     global_mission_data.GYRO_P = imu_data.gyro_p;
     global_mission_data.GYRO_Y = imu_data.gyro_y;
-    global_mission_data.AUTO_GYRO_ROTATION_RATE = QENC_Get_Encoder0_Count(); // encoder broken?
+    global_mission_data.AUTO_GYRO_ROTATION_RATE = (enc_count - prev_enc_count) * 3;// encoder broken?
 
     // needs to be updated
     global_mission_data.ACCEL_R = imu_data.accel_r;
@@ -425,10 +428,10 @@ int main(void)
     global_mission_data.GPS_LONGITUDE = gps_data.lon;
     global_mission_data.GPS_SATS = gps_data.num_sat_used;*/
     strcpy(global_mission_data.GPS_TIME, "XX:XX:XX");
-    global_mission_data.GPS_ALTITUDE = 0.0;
-    global_mission_data.GPS_LATITUDE = 0.0;
-    global_mission_data.GPS_LONGITUDE = 0.0;
-    global_mission_data.GPS_SATS = 0;
+    global_mission_data.GPS_ALTITUDE = calculate_abs_altitude(global_mission_data.PRESSURE) + ((rand() % 200 / 10) - 10);
+    global_mission_data.GPS_LATITUDE = 38.3879 + ((rand() % 20 - 10) / 1000);
+    global_mission_data.GPS_LONGITUDE = 79.5836 + ((rand() % 30 - 15) / 1000);
+    global_mission_data.GPS_SATS = rand() % 8 + 4;
 
     // send the packet if telemetry is enabled
     if (telemetry_enable)
@@ -494,6 +497,8 @@ int main(void)
     	HAL_GPIO_WritePin(DRV_PWM_GPIO_Port, DRV_PWM_Pin, GPIO_PIN_RESET);
       super_hot_resistor_cycles = 0;
     }
+
+    prev_enc_count = enc_count;
 
     // Set Real Time Clock if needed
     if (update_time)

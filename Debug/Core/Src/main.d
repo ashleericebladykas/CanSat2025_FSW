@@ -46,7 +46,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../USB_Device/App/usb_device.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h \
  ../USB_Device/Target/usbd_conf.h ../Core/Inc/global.h \
- ../Core/Inc/commands.h ../Core/Inc/global.h ../Core/Inc/uart_interrupt.h \
+ ../Core/Inc/uart_interrupt.h \
  ../Core/Src/../../Drivers/ICM42688P/ICM42688PSPI.h \
  ../Drivers/CMSIS/Device/ST/STM32G4xx/Include/stm32g491xx.h \
  ../Core/Src/../../Drivers/MS5607/MS5607SPI.h \
@@ -107,8 +107,6 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../USB_Device/App/usb_device.h:
 ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h:
 ../USB_Device/Target/usbd_conf.h:
-../Core/Inc/global.h:
-../Core/Inc/commands.h:
 ../Core/Inc/global.h:
 ../Core/Inc/uart_interrupt.h:
 ../Core/Src/../../Drivers/ICM42688P/ICM42688PSPI.h:
