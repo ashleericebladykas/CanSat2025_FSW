@@ -23,7 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "global.h"
-//#include "commands.h"
+// #include "commands.h"
 #include "uart_interrupt.h"
 
 #include "../../Drivers/ICM42688P/ICM42688PSPI.h"
@@ -130,7 +130,6 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 
-
   HAL_Init();
 
   /* USER CODE BEGIN Init */
@@ -146,7 +145,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-//  MX_DMA_Init();
+  //  MX_DMA_Init();
   MX_ADC1_Init();
   MX_I2C3_Init();
   MX_IRTIM_Init();
@@ -155,7 +154,7 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM3_Init();
   MX_TIM8_Init();
-  //MX_TIM15_Init();
+  // MX_TIM15_Init();
   MX_TIM16_Init();
   MX_TIM17_Init();
   MX_UART5_Init();
@@ -179,44 +178,55 @@ int main(void)
   HAL_GPIO_WritePin(MAG_nCS_GPIO_Port, MAG_nCS_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(MAGEXT_nCS_GPIO_Port, MAGEXT_nCS_Pin, GPIO_PIN_SET);
 
-  // Initialize IMU
+  // Initialize ICM42688P (IMU)
   ICM42688P_init(&hspi2, IMU_nCS_GPIO_Port, IMU_nCS_Pin);
 
-  // Initialize MS5607
+  // Initialize pressure sensor (MS5607)
   MS5607_Init(&hspi2, BMP_nCS_GPIO_Port, BMP_nCS_Pin);
 
-  // Initialize BMM150
+  // Initialize magnetometer (BMM150)
   struct bmm150_dev bmm150 = BMM150_spi_init(&hspi2, MAG_nCS_GPIO_Port, MAG_nCS_Pin);
 
-  // Initialize LC76G
+  // Initialize GPS (LC76G)
   LC76G_init();
 
-  // Initializing AMT10E2
+  // Initialize quadrature encoder (AMT10E2)
   QENC_Init_Encoder0();
 
-  //drv8838_init(&htim15, DRV_DIR_GPIO_Port, DRV_DIR_Pin);
+  // drv8838_init(&htim15, DRV_DIR_GPIO_Port, DRV_DIR_Pin);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  // DELETE:
   int i = 0;
+  // Generic temporary variable for use in sprintf() calls, etc.
   int str_len = 0;
 
-  MS5607Readings bmp_data;
-  ICM42688P_AccelData imu_data;
-  BMM150_mag_data mag_data;
-  LC76G_gps_data gps_data;
+  MS5607Readings bmp_data;      // pressure data
+  ICM42688P_AccelData imu_data; // accelerometer / gyro data
+  BMM150_mag_data mag_data;     // DELETE: magnetometer data (unused)
+  LC76G_gps_data gps_data;      // GPS data
 
   uint8_t update_time = 0;
 
+  // How long (in seconds) should the resistor stay actuated until safety shutoff?
   uint8_t super_hot_resistor_cycle_limit = 45;
+  // How long (in seconds) has the resistor been actuated for?
   uint8_t super_hot_resistor_cycles = 0;
+
+  // DELETE:
   char command[64] = {0};
 
+  // Holds the number of quadrature encoder revolutions measured in the
+  // previous and current telemetry packet, respectively (used to calculate
+  // auto-gyro rotation rate)
   int16_t prev_enc_count = 0;
   int16_t enc_count = 0;
 
+  // Initialize the global mission_data struct
   init_mission_data();
 
   while (1)
@@ -224,11 +234,11 @@ int main(void)
     // enable interrupts
     HAL_NVIC_EnableIRQ(USART3_IRQn);
 
-    // receive command (15 bytes max?)
+    // receive command (22 bytes max)
     uint8_t rx_buff[22];
 
     HAL_UART_Receive_IT(&huart3, rx_buff, 22);
-    //HAL_UART_Transmit(&huart3, rx_buff, sizeof(rx_buff), HAL_MAX_DELAY);
+    // HAL_UART_Transmit(&huart3, rx_buff, sizeof(rx_buff), HAL_MAX_DELAY);
 
     // step1: convert rx_buff array of "uint8_t"s into array of "chars"
     char *char_array = (char *)rx_buff;
@@ -236,8 +246,9 @@ int main(void)
 
     // step2: convert array of chars into string  (https://www.geeksforgeeks.org/convert-character-array-to-string-in-c/)
     strncpy(rx_string, char_array, 22);
-    //strcpy(global_mission_data.CMD_ECHO, rx_string);
+    // strcpy(global_mission_data.CMD_ECHO, rx_string);
 
+    // Add null terminator to end of command string
     rx_string[22] = '\0';
     // HAL_UART_Transmit(&huart3, rx_string, sizeof(rx_string), HAL_MAX_DELAY);
 
@@ -256,159 +267,211 @@ int main(void)
     // elif (strncmp(&sub_cmd, "MEC", cmd_length) != 0) {
     // break;
     //}
+
+    // CX ON command -> start transmitting telemetry packets
     if (strncmp(rx_string, "CMD,3174,CX,ON", 14) == 0)
     {
-//    	GPIO_TypeDef* CXON_Port = "A";
-//    	uint16_t CXON_Pin = 8;
-//		HAL_GPIO_WritePin(CXON_Port,CXON_Pin, GPIO_PIN_SET);
-//		HAL_GPIO_WritePin(CXON_Port,CXON_Pin, GPIO_PIN_RESET);
-//    	 __SEV();
+      //    	GPIO_TypeDef* CXON_Port = "A";
+      //    	uint16_t CXON_Pin = 8;
+      //		HAL_GPIO_WritePin(CXON_Port,CXON_Pin, GPIO_PIN_SET);
+      //		HAL_GPIO_WritePin(CXON_Port,CXON_Pin, GPIO_PIN_RESET);
+      //    	 __SEV();
+      // set global telemetry flag
       telemetry_enable = 1;
+
+      // set command echo in the global mission struct
       char c_echo[] = "CXON";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
-
-
     }
+    // CX OFF command -> stop transmitting telemetry packets
     else if (strncmp(rx_string, "CMD,3174,CX,OFF", 15) == 0)
     {
+      // reset global telemetry flag
       telemetry_enable = 0;
+
+      // set command echo
       char c_echo[] = "CXOFF";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
+    // ST command -> set mission time
     else if (strncmp(rx_string, "CMD,3174,ST,", 12) == 0)
     {
+      // parse the timestamp to set to
       char arg[9];
       char *time_str = rx_string + 12;
       strncpy(arg, time_str, 9);
 
-      if (strlen(arg) == 8) {
+      // if a manual timestamp has been input...
+      if (strlen(arg) == 8)
+      {
+        // set mission time
         char *str_end;
         strncpy(global_mission_data.MISSION_TIME, time_str, 9);
         // Set a flag telling us to update the RTC
         update_time = 1;
+        // stop reading time from GPS
         gps_time_enable = 0;
-      } else if (strncmp(time_str, "GPS", 3)) {
+      }
+      // read time from GPS
+      else if (strncmp(time_str, "GPS", 3))
+      {
         gps_time_enable = 1;
-      } else {
+      }
+      else
+      {
         // if the string is not 8 characters long, set it to "00:00:00"
         strcpy(global_mission_data.MISSION_TIME, "00:00:00");
         gps_time_enable = 0;
       }
+      // set command echo
       char c_echo[] = "ST";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
+    // SIM ENABLE command -> allow simulation mode to be activated
     else if (strncmp(rx_string, "CMD,3174,SIM,ENABLE", 19) == 0)
     {
+      // set global flag
       simulation_pre = 1;
+      // set command echo
       char c_echo[] = "SIMENABLE";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
+    // SIM ACTIVATE command -> turn simulation mode on
     else if (strncmp(rx_string, "CMD,3174,SIM,ACTIVATE", 21) == 0)
     {
+      // check that simulation mode has been activated
       if (simulation_pre == 1)
       {
+        // set global simulation flag
         simulation_enable = 1;
+        // make first simulated pressure value match actual value
         simulated_pressure = global_mission_data.PRESSURE;
+        // set command echo
         char c_echo[] = "SIMACT";
         strcpy(global_mission_data.CMD_ECHO, c_echo);
       }
     }
-
+    // SIM DISABLE command -> turn simulation mode off
     else if (strncmp(rx_string, "CMD,3174,SIM,DISABLE", 20) == 0)
     {
+      // reset global flag
       simulation_enable = 0;
+      // set command echo
       char c_echo[] = "SIMDIS";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
-    // ADD SIMP
+    // SIMP command -> add simulated pressure data
     else if (strncmp(rx_string, "CMD,3174,SIMP,", 14) == 0)
     {
+      // parse inputted pressure data
       char *pressure_str = rx_string + 14;
       char *str_end;
       long pressure_pa = atof(rx_string + 14);
       // if (str_end == pressure_str || *str_end != '\0')
       // it wasn't a valid number
+      // set simulated pressure to parsed value
       simulated_pressure = pressure_pa;
+
+      // set command echo
       char c_echo[] = "SIMP";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
+    // CAL command -> calibrate altitude
     else if (strncmp(rx_string, "CMD,3174,CAL", 12) == 0)
     {
+      // set global flag
       is_calibrated = 1;
+      // set command echo
       char c_echo[] = "CAL";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
+    // MEC WIRE ON command -> actuate resistor-filament system
     else if (strncmp(rx_string, "CMD,3174,MEC,WIRE,ON", 20) == 0)
     {
+      // set global falg
       mec_wire_enable = 1;
+      // set command echo
       char c_echo[] = "MECON";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
+      // DELETE:
       HAL_UART_Transmit(&huart3, c_echo, sizeof(c_echo), HAL_MAX_DELAY);
     }
+    // MEC WIRE OFF command -> manually stop actuating resistor-filament system
     else if (strncmp(rx_string, "CMD,3174,MEC,WIRE,OFF", 21) == 0)
     {
+      // disable global flag
       mec_wire_enable = 0;
+      // set command echo
       char c_echo[] = "MECOFF";
       strcpy(global_mission_data.CMD_ECHO, c_echo);
     }
-    else {
-//      HAL_UART_Transmit(&huart3, rx_string, sizeof(rx_string), HAL_MAX_DELAY);
+    // DELETE:
+    else
+    {
+      //      HAL_UART_Transmit(&huart3, rx_string, sizeof(rx_string), HAL_MAX_DELAY);
     }
-	memset(rx_buff, 0, sizeof(rx_buff));
+    // clear command buffer
+    memset(rx_buff, 0, sizeof(rx_buff));
 
     // Receive command from ground station
-    //HAL_UART_Receive(&huart3, command, 64, 10);
-    //process_command(command);
+    // HAL_UART_Receive(&huart3, command, 64, 10);
+    // process_command(command);
 
+    // read pressure sensor values
     bmp_data = MS5607ReadValues();
+    // read IMU values
     imu_data = ICM42688P_read_data();
+    // DELETE: broken/unused sensor data
     // mag_data = BMM150_read_mag_data(&bmm150);
     // gps_data = LC76G_read_data();
+    // read quadrature encoder values
     enc_count = QENC_Get_Encoder0_Count();
 
-    // update mission struct
+    // record sensor data into the global mission data struct
     global_mission_data.TEMPERATURE = bmp_data.temperature_C;
 
     // in simulation mode, update pressure to match what is parsed from command
     if (simulation_enable == 1)
     {
       global_mission_data.PRESSURE = simulated_pressure;
-      global_mission_data.MODE = 'S';
+      global_mission_data.MODE = 'S'; // set mode to 'S' for simulation
     }
     // otherwise, update pressure to match data read from sensor
     else
     {
       global_mission_data.PRESSURE = bmp_data.pressure_kPa;
-      global_mission_data.MODE = 'F';
+      global_mission_data.MODE = 'F'; // set mode to 'F' for flight
     }
     // if the calibrating flag is true, calibrate the altitude
     global_mission_data.ALTITUDE = calculateAltitude(global_mission_data.PRESSURE);
     if (is_calibrated == 1)
     {
       global_mission_data.ALTITUDE_OFFSET = global_mission_data.ALTITUDE; // set the offset to the current altitude
-      is_calibrated = 0; // reset the flag
+      is_calibrated = 0;                                                  // reset the flag
     }
     // Use altitude to update the mission state as needed
     determineState(global_mission_data.ALTITUDE);
 
     // update battery voltage
-    uint16_t battery_mV = 0;
-    BQ28Z610_ReadVoltage(&hi2c3, &battery_mV);
+    uint16_t battery_mV = 0;                                    // temp variable to hold the battery voltage in millivolts
+    BQ28Z610_ReadVoltage(&hi2c3, &battery_mV);                  // read battery voltage from BQZ
     global_mission_data.VOLTAGE = (float)(battery_mV) / 1000.0; // convert from mV to V
 
-    // gyro broken?
+    // read gyro data
     global_mission_data.GYRO_R = imu_data.gyro_r;
     global_mission_data.GYRO_P = imu_data.gyro_p;
     global_mission_data.GYRO_Y = imu_data.gyro_y;
-    global_mission_data.AUTO_GYRO_ROTATION_RATE = (enc_count - prev_enc_count) * 3;// encoder broken?
 
-    // needs to be updated
+    // calculates the auto gyro rotation rate in degrees per second according to:
+    // (current count) - (previous count) * (360 degrees / 1 revolution) * (1 revolution / 120 counts)
+    global_mission_data.AUTO_GYRO_ROTATION_RATE = (enc_count - prev_enc_count) * 3;
+
+    // read gyro acceleration data
     global_mission_data.ACCEL_R = imu_data.accel_r;
     global_mission_data.ACCEL_P = imu_data.accel_p;
     global_mission_data.ACCEL_Y = imu_data.accel_y;
 
-
-    // update magnetometer
+    // update magnetometer; dummy data
     global_mission_data.MAG_R = rand() % 1000 / 1000.0; // mag_r
     global_mission_data.MAG_P = rand() % 1000 / 1000.0; // mag_p
     global_mission_data.MAG_Y = rand() % 1000 / 1000.0; // mag_y
@@ -418,7 +481,7 @@ int main(void)
     global_mission_data.MAG_Y = mag_data.z; // mag_y
     */
 
-    // update GPS
+    // update GPS data; dummy data
     /*str_len = sprintf(global_mission_data.GPS_TIME, "%d:%d:%d",
                      gps_data.time_H,
                      gps_data.time_M,
@@ -436,54 +499,64 @@ int main(void)
     // send the packet if telemetry is enabled
     if (telemetry_enable)
     {
+      // create an empty buffer for the telemetry packet string
       char telemetry_string[200];
+      // fill the buffer with the first half of the packet
       str_len = sprintf(telemetry_string, "%d,%s,%ld,%c,%s,%3.1f,%.1f,%.1f,%.1f,%d,%d,%d",
-                       global_mission_data.TEAM_ID,      // team id
-                       global_mission_data.MISSION_TIME, // temp; mission time
-                       global_mission_data.PACKET_COUNT, // temp; packet count
-                       global_mission_data.MODE,         // mode
-                       global_mission_data.STATE,        // state
-                       global_mission_data.ALTITUDE,     // temp; altitude
-                       global_mission_data.TEMPERATURE,  // temperature
-                       global_mission_data.PRESSURE,     // pressure
-                       global_mission_data.VOLTAGE,
-                       global_mission_data.GYRO_R, // gyro_r
-                       global_mission_data.GYRO_P, // gyro_p
-                       global_mission_data.GYRO_Y
-                       // gyro_y
+                        global_mission_data.TEAM_ID,      // team id (3174)
+                        global_mission_data.MISSION_TIME, // mission time
+                        global_mission_data.PACKET_COUNT, // packet count
+                        global_mission_data.MODE,         // mode
+                        global_mission_data.STATE,        // state
+                        global_mission_data.ALTITUDE,     // calibrated altitude (m)
+                        global_mission_data.TEMPERATURE,  // temperature (C)
+                        global_mission_data.PRESSURE,     // pressure (kPa)
+                        global_mission_data.VOLTAGE,      // battery voltage (V)
+                        global_mission_data.GYRO_R,       // gyro roll (degrees/s)
+                        global_mission_data.GYRO_P,       // gyro pitch (degrees/s)
+                        global_mission_data.GYRO_Y        // gyro yaw (degrees/s)
       );
       // str_len = sizeof(telemetry_string);
+      // send the first part of the packet over UART
       HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
-      memset(telemetry_string, 0, sizeof(telemetry_string)); // flush array
+      // clear the buffer
+      memset(telemetry_string, 0, sizeof(telemetry_string));
+      // fill the buffer with the second half of the packet
       str_len = sprintf(telemetry_string, ",%d,%d,%d,%.1f,%.1f,%.1f,%d,%s,%.1f,%.4f,%.4f,%d,%s",
-                       global_mission_data.ACCEL_R, // accel_r
-                       global_mission_data.ACCEL_P, // accel_p
-                       global_mission_data.ACCEL_Y,
-                       global_mission_data.MAG_R,                   // temp; mag_r
-                       global_mission_data.MAG_P,                   // temp; mag_p
-                       global_mission_data.MAG_Y,                   // temp; mag_y
-                       global_mission_data.AUTO_GYRO_ROTATION_RATE, // temp; auto-gyro rotation rate
-                       global_mission_data.GPS_TIME,                // temp; gps time
-                       global_mission_data.GPS_ALTITUDE,            // temp; gps altitude
-                       global_mission_data.GPS_LATITUDE,            // temp; gps latitude
-                       global_mission_data.GPS_LONGITUDE,           // temp; gps longitude
-                       global_mission_data.GPS_SATS,                // temp; # of gps satellites
-                       global_mission_data.CMD_ECHO);
+                        global_mission_data.ACCEL_R,                 // accelerometer roll (degrees/s^2)
+                        global_mission_data.ACCEL_P,                 // accelerometer pitch (degrees/s^2)
+                        global_mission_data.ACCEL_Y,                 // accelerometer yaw (degrees/s^2)
+                        global_mission_data.MAG_R,                   // magnetometer roll
+                        global_mission_data.MAG_P,                   // magnetometer pitch
+                        global_mission_data.MAG_Y,                   // magnetometer yaw
+                        global_mission_data.AUTO_GYRO_ROTATION_RATE, // auto-gyro rotation rate (rps)
+                        global_mission_data.GPS_TIME,                // GPS time
+                        global_mission_data.GPS_ALTITUDE,            // GPS (absolute) altitude (m)
+                        global_mission_data.GPS_LATITUDE,            // GPS latitude
+                        global_mission_data.GPS_LONGITUDE,           // GPS longitude
+                        global_mission_data.GPS_SATS,                // # of connected GPS satellites
+                        global_mission_data.CMD_ECHO                 // tracks previously received command
+      );
+      // send the second half of the packet over UART
       HAL_UART_Transmit(&huart3, telemetry_string, str_len, HAL_MAX_DELAY);
 
       /*char test_string[30];
       str_len = sprintf(test_string, "accel_z: %d", imu_data.accel_z);
       HAL_UART_Transmit(&huart3, test_string, str_len, HAL_MAX_DELAY);*/
 
+      // increment packet count once the entire packet has been transmitted
       global_mission_data.PACKET_COUNT = global_mission_data.PACKET_COUNT + 1;
     }
 
-    // activate resistor
+    // Actuate the resistor
     if (mec_wire_enable == 1)
     {
-      // actuate resistor
+      // set the resistor pin high
       HAL_GPIO_WritePin(DRV_PWM_GPIO_Port, DRV_PWM_Pin, GPIO_PIN_SET);
+      // increment the number of seconds the resistor has been active for
       super_hot_resistor_cycles += 1;
+
+      // if the duration of the resistor's actuation exceeds the safety limit, turn it off
       if (super_hot_resistor_cycles >= super_hot_resistor_cycle_limit)
       {
         HAL_GPIO_WritePin(DRV_PWM_GPIO_Port, DRV_PWM_Pin, GPIO_PIN_RESET);
@@ -491,50 +564,56 @@ int main(void)
         mec_wire_enable = 0;
       }
     }
+    // Manually turn off the resistor
     else
     {
       // turn resistor off
-    	HAL_GPIO_WritePin(DRV_PWM_GPIO_Port, DRV_PWM_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(DRV_PWM_GPIO_Port, DRV_PWM_Pin, GPIO_PIN_RESET);
       super_hot_resistor_cycles = 0;
     }
 
+    // After math has been calculated, set the previous encoder count for the
+    // next cycle
     prev_enc_count = enc_count;
 
-    // Set Real Time Clock if needed
+    // Update mission time
     if (update_time)
-        {
-          // Set RTC to 00:00:00
-          RTC_TimeTypeDef sTime = {0};
-          RTC_DateTypeDef sDate = {0};
+    {
+      // Initialize RTC to 00:00:00
+      RTC_TimeTypeDef sTime = {0};
+      RTC_DateTypeDef sDate = {0};
 
-          char *string_remainder;
-          sTime.Hours = strtol(global_mission_data.MISSION_TIME, &string_remainder, 10);
-          sTime.Minutes = strtol(++string_remainder, &string_remainder, 10);
-          sTime.Seconds = strtol(++string_remainder, &string_remainder, 10);
+      //
+      char *string_remainder;
+      sTime.Hours = strtol(global_mission_data.MISSION_TIME, &string_remainder, 10);
+      sTime.Minutes = strtol(++string_remainder, &string_remainder, 10);
+      sTime.Seconds = strtol(++string_remainder, &string_remainder, 10);
 
-          if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-          {
-            Error_Handler();
-          }
+      if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
 
-          sDate.WeekDay = RTC_WEEKDAY_FRIDAY;
-          sDate.Month = RTC_MONTH_JANUARY;
-          sDate.Date = 2;
-          sDate.Year = 70;
+      sDate.WeekDay = RTC_WEEKDAY_FRIDAY;
+      sDate.Month = RTC_MONTH_JANUARY;
+      sDate.Date = 2;
+      sDate.Year = 70;
 
-          if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
-          {
-            Error_Handler();
-          }
+      if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
+      {
+        Error_Handler();
+      }
 
-          update_time = 0;
-        }
+      update_time = 0;
+    }
 
-    if (!gps_time_enable) {
+    if (!gps_time_enable)
+    {
       // Update mission time
       RTC_DateTypeDef getDate = {0};
       RTC_TimeTypeDef getTime = {0};
 
+      // check for valid time
       if (HAL_RTC_GetTime(&hrtc, &getTime, RTC_FORMAT_BIN) != HAL_OK)
       {
         Error_Handler();
@@ -546,12 +625,16 @@ int main(void)
         Error_Handler();
       }
 
+      // write time from GPS to the mission time struct
       snprintf(global_mission_data.MISSION_TIME, 9, "%02d:%02d:%02d",
-              getTime.Hours, getTime.Minutes, getTime.Seconds);
+               getTime.Hours, getTime.Minutes, getTime.Seconds);
     }
-    
+
+    // Delay for 1000ms to achieve the required 1Hz transmission rate
+    // NOTE: adjust to 900? or are the two delays independent?
     HAL_Delay(1000);
 
+    // heartbeat LED
     HAL_GPIO_WritePin(USR_LED_GPIO_Port, USR_LED_Pin, GPIO_PIN_RESET);
     HAL_Delay(100);
     HAL_GPIO_WritePin(USR_LED_GPIO_Port, USR_LED_Pin, GPIO_PIN_SET);
@@ -1408,70 +1491,25 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
-
-  // Initialize low level stuff
-  /*
-  LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_1, LL_DMA_CHANNEL_4);
-  LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_STREAM_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
-  LL_DMA_SetStreamPriorityLevel(DMA1, LL_DMA_STREAM_1, LL_DMA_PRIORITY_LOW);
-  LL_DMA_SetMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MODE_CIRCULAR);
-  LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_PERIPH_NOINCREMENT);
-  LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MEMORY_INCREMENT);
-  LL_DMA_SetPeriphSize(DMA1, LL_DMA_STREAM_1, LL_DMA_PDATAALIGN_BYTE);
-  LL_DMA_SetMemorySize(DMA1, LL_DMA_STREAM_1, LL_DMA_MDATAALIGN_BYTE);
-  LL_DMA_DisableFifoMode(DMA1, LL_DMA_STREAM_1);
-  LL_DMA_SetPeriphAddress(DMA1, LL_DMA_STREAM_1, LL_USART_DMA_GetRegAddr(USART3));
-  LL_DMA_SetMemoryAddress(DMA1, LL_DMA_STREAM_1, (uint32_t)gps_dma_buffer);
-  LL_DMA_SetDataLength(DMA1, LL_DMA_STREAM_1, ARRAY_LEN(gps_dma_buffer));
-  LL_DMA_EnableStream(DMA1, LL_DMA_STREAM_1);
-  */
 }
-
-//static void MX_DMA_Init(void)
-//{
-//
-//  /* DMA controller clock enable */
-//  __HAL_RCC_DMAMUX1_CLK_ENABLE();
-//  __HAL_RCC_DMA1_CLK_ENABLE();
-//  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
-//
-//  /* DMA interrupt init */
-//  /* DMA1_Channel3_IRQn interrupt configuration */
-//  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
-//  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
-//
-//  // Initialize low level stuff
-//  LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_1, LL_DMA_CHANNEL_4);
-//  LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_STREAM_1, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
-//  LL_DMA_SetStreamPriorityLevel(DMA1, LL_DMA_STREAM_1, LL_DMA_PRIORITY_LOW);
-//  LL_DMA_SetMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MODE_CIRCULAR);
-//  LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_PERIPH_NOINCREMENT);
-//  LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_STREAM_1, LL_DMA_MEMORY_INCREMENT);
-//  LL_DMA_SetPeriphSize(DMA1, LL_DMA_STREAM_1, LL_DMA_PDATAALIGN_BYTE);
-//  LL_DMA_SetMemorySize(DMA1, LL_DMA_STREAM_1, LL_DMA_MDATAALIGN_BYTE);
-//  LL_DMA_DisableFifoMode(DMA1, LL_DMA_STREAM_1);
-//  LL_DMA_SetPeriphAddress(DMA1, LL_DMA_STREAM_1, LL_USART_DMA_GetRegAddr(USART3));
-//  LL_DMA_SetMemoryAddress(DMA1, LL_DMA_STREAM_1, (uint32_t)gps_dma_buffer);
-//  LL_DMA_SetDataLength(DMA1, LL_DMA_STREAM_1, ARRAY_LEN(gps_dma_buffer));
-//  LL_DMA_EnableStream(DMA1, LL_DMA_STREAM_1);
-//}
 
 // Needed to facilitate DMA transfer from GPS module
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-    if (huart->Instance == UART5) {
-      // gps_dma_buffer now contains 'Size' bytes of received data
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+  if (huart->Instance == UART5)
+  {
+    // gps_dma_buffer now contains 'Size' bytes of received data
 
-      // Parse data stored in DMA buffer
-      LC76G_parse_data();
+    // Parse data stored in DMA buffer
+    LC76G_parse_data();
 
-      // Empty the DMA buffer
-      memset(gps_dma_buffer, 0, GPS_DMA_BUFFER_SIZE);
+    // Empty the DMA buffer
+    memset(gps_dma_buffer, 0, GPS_DMA_BUFFER_SIZE);
 
-      // Restart DMA reception for the next burst
-      HAL_UARTEx_ReceiveToIdle_DMA(&huart5, gps_dma_buffer, GPS_DMA_BUFFER_SIZE);
-    }
+    // Restart DMA reception for the next burst
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart5, gps_dma_buffer, GPS_DMA_BUFFER_SIZE);
+  }
 }
-
 
 /**
  * @brief GPIO Initialization Function
@@ -1573,89 +1611,88 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+/*
 void SendTelemetry(void *argument)
 {
   /* USER CODE BEGIN SendTelemetry */
+// this can probably be dynamically typed to take the sizeof() each property instead of being hardcoded
+// unsigned int property_sizes[] = {2, 4, 4, 1, STATE_TEXT_LEN, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 4, 1, CMD_ECHO_LEN};
 
-  // this can probably be dynamically typed to take the sizeof() each property instead of being hardcoded
-  unsigned int property_sizes[] = {2, 4, 4, 1, STATE_TEXT_LEN, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 4, 1, CMD_ECHO_LEN};
+/* Infinite loop */
+/*
+for (;;)
+{
+  // create buffer to copy mission data into
+  // +19 for all necessary commas
+  char telemetry_string[sizeof(global_mission_data) + 19];
+  char *data_pointer = &global_mission_data;
 
-  /* Infinite loop */
-  for (;;)
+  // external index!!
+  unsigned int s_index = 0;
+
+  // find length of array
+  unsigned int num_properties = sizeof(property_sizes) / sizeof(unsigned int);
+  for (unsigned int k = 0; k < num_properties; k++)
   {
-    // create buffer to copy mission data into
-    // +19 for all necessary commas
-    char telemetry_string[sizeof(global_mission_data) + 19];
-    char *data_pointer = &global_mission_data;
+    // memcpy() transfers 'k' bytes of data from the struct to the string
+    memcpy(*telemetry_string + index, data_pointer, property_sizes[k]);
 
-    // external index!!
-    unsigned int s_index = 0;
+    // move the data pointer and the string pointer separately (commas in the
+    // resulting string mean the two positions are not always equal)
+    data_pointer += property_sizes[k];
+    s_index += property_sizes[k];
 
-    // find length of array
-    unsigned int num_properties = sizeof(property_sizes) / sizeof(unsigned int);
-    for (unsigned int k = 0; k < num_properties; k++)
+    // don't add a comma after the last property!
+    if (k < num_properties - 1)
     {
-      // memcpy() transfers 'k' bytes of data from the struct to the string
-      memcpy(*telemetry_string + index, data_pointer, property_sizes[k]);
-
-      // move the data pointer and the string pointer separately (commas in the
-      // resulting string mean the two positions are not always equal)
-      data_pointer += property_sizes[k];
-      s_index += property_sizes[k];
-
-      // don't add a comma after the last property!
-      if (k < num_properties - 1)
-      {
-        telemetry_string[s_index] = ',';
-        s_index = s_index + 1;
-      }
+      telemetry_string[s_index] = ',';
+      s_index = s_index + 1;
     }
-
-    // after copying all the data over, add a null terminator at the end
-    telemetry_string[s_index] = '\0';
-
-    // char test_string[] = "TESTLEMETRY";
-
-    // HAL_UART_Transmit(&huart4, test_string, sizeof(test_string), 250);
-
-    /*
-    telemetry_string[] now contains global_mission_data formatted as a string of characters
-    data in LITTLE ENDIAN format:
-      TEAM_ID = 3174 = 0x0C66 and is stored as ASCII codes 0x66 ('f') followed by 0x0C (NP form feed) in the string
-
-    string format is as follows in terms of bytes:
-      string[0:1] = TEAM_ID[1:0]
-      string[2:5] = MISSION_TIME[3:0] <-- format to UTC time (hh:mm:ss)
-      string[6:9] = PACKET_COUNT[3:0]
-      string[10] = MODE
-      string[11:20] = STATE[0:9]
-      string[21:24] = ALTITUDE[3:0]
-      string[25:28] = TEMPERATURE[3:0]
-      string[29:32] = PRESSURE[3:0]
-      string[33:36] = VOLTAGE[3:0]
-      string[37:40] = GYRO_R[3:0]
-      string[41:44] = GYRO_P[3:0]
-      string[45:48] = GYRO_Y[3:0]
-      string[49:52] = ACCEL_R[3:0]
-      string[53:56] = ACCEL_P[3:0]
-      string[57:60] = ACCEL_Y[3:0]
-      string[61:64] = MAG_R[3:0]
-      string[65:68] = MAG_P[3:0]
-      string[69:72] = MAG_Y[3:0]
-      string[73:74] = AUTO_GYRO_ROTATION_RATE[1:0]
-      string[75:78] = GPS_TIME[3:0]
-      string[79:82] = GPS_ALTITUDE[3:0]
-      string[83:86] = GPS_LATITUDE[3:0]
-      string[87:90] = GPS_LONGITUDE[3:0]
-      string[91] = GPS_SATS
-      string[92:101] = CMD_ECHO[0:9]
-    */
-
-    HAL_Delay(1000);
   }
-  /* USER CODE END SendTelemetry */
-}
+
+  // after copying all the data over, add a null terminator at the end
+  telemetry_string[s_index] = '\0';
+
+  // char test_string[] = "TESTLEMETRY";
+
+  // HAL_UART_Transmit(&huart4, test_string, sizeof(test_string), 250);
+
+  /*
+  telemetry_string[] now contains global_mission_data formatted as a string of characters
+  data in LITTLE ENDIAN format:
+    TEAM_ID = 3174 = 0x0C66 and is stored as ASCII codes 0x66 ('f') followed by 0x0C (NP form feed) in the string
+
+  string format is as follows in terms of bytes:
+    string[0:1] = TEAM_ID[1:0]
+    string[2:5] = MISSION_TIME[3:0] <-- format to UTC time (hh:mm:ss)
+    string[6:9] = PACKET_COUNT[3:0]
+    string[10] = MODE
+    string[11:20] = STATE[0:9]
+    string[21:24] = ALTITUDE[3:0]
+    string[25:28] = TEMPERATURE[3:0]
+    string[29:32] = PRESSURE[3:0]
+    string[33:36] = VOLTAGE[3:0]
+    string[37:40] = GYRO_R[3:0]
+    string[41:44] = GYRO_P[3:0]
+    string[45:48] = GYRO_Y[3:0]
+    string[49:52] = ACCEL_R[3:0]
+    string[53:56] = ACCEL_P[3:0]
+    string[57:60] = ACCEL_Y[3:0]
+    string[61:64] = MAG_R[3:0]
+    string[65:68] = MAG_P[3:0]
+    string[69:72] = MAG_Y[3:0]
+    string[73:74] = AUTO_GYRO_ROTATION_RATE[1:0]
+    string[75:78] = GPS_TIME[3:0]
+    string[79:82] = GPS_ALTITUDE[3:0]
+    string[83:86] = GPS_LATITUDE[3:0]
+    string[87:90] = GPS_LONGITUDE[3:0]
+    string[91] = GPS_SATS
+    string[92:101] = CMD_ECHO[0:9]
+  */
+
+// HAL_Delay(1000);
+//}
+//}
 
 /* USER CODE END 4 */
 
